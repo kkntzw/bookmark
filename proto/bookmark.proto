@@ -4,7 +4,7 @@ package bookmark;
 
 import "google/protobuf/empty.proto";
 
-option go_package = "./bookmark";
+option go_package = "./form";
 
 // ブックマークを管理するサービス。
 service Bookmarker {

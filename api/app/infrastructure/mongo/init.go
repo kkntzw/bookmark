@@ -2,11 +2,11 @@
 package mongorepo
 
 import (
-	"bookmark/config"
 	"context"
 	"os"
 	"time"
 
+	"github.com/kkntzw/bookmark/config"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"

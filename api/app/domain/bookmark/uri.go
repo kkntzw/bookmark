@@ -15,7 +15,7 @@ type URI struct {
 // RegExp: `^[\s\v\c85\cA0]*$`
 //
 // 文字列長が0の場合はエラーを返却する。
-// 空文字(\c09\c0A\c0B\c0C\c0D\c20\c85\cA0) 以外の文字を含まない場合はエラーを返却する。
+// 空文字(\u0009-\u000D\u0020\u0085\u00A0)以外の文字を含まない場合はエラーを返却する。
 func validateURI(s string) error {
 	if len(s) == 0 {
 		return fmt.Errorf("string length is 0")

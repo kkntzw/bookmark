@@ -14,7 +14,7 @@ type ID struct {
 // RegExp: `^[-0-9a-z]+$`
 //
 // 文字列長が0の場合はエラーを返却する。
-// U+002D(-) または U+0030-U+0039(0-9) または U+0061-U+007A(a-z) 以外の文字を含む場合はエラーを返却する。
+// ハイフン、半角数字、半角英小文字(\u002D\u0030-\u0039\u0061-\u007A)以外の文字を含む場合はエラーを返却する。
 func validateID(s string) error {
 	if len(s) == 0 {
 		return fmt.Errorf("string length is 0")

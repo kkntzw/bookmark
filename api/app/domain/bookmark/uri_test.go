@@ -47,7 +47,7 @@ func TestNewURI_不正な値を受け取るとエラーを返却する(t *testin
 		errString string
 	}{
 		{v: "", errString: "string length is 0"},
-		{v: "\u0009\u000A\u000B\u000C\u000D\u0020\u0085\u00A0", errString: "empty string"},
+		{v: "\u0009\u000A\u000B\u000C\u000D\u0020\u0085\u00A0", errString: "blank string"},
 		{v: "\u001F", errString: "invalid format: \u001F"},
 		{v: "\u007F", errString: "invalid format: \u007F"},
 	}

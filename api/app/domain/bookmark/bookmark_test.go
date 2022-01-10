@@ -18,7 +18,7 @@ func args() (*ID, *Name, *URI, []Tag) {
 	return id, name, uri, tags
 }
 
-func TestNew_正当な値を受け取るとBook型のインスタンスを返却する(t *testing.T) {
+func TestNew_正当な値を受け取るとBookmark型のインスタンスを返却する(t *testing.T) {
 	tag1, _ := NewTag("1")
 	tag2, _ := NewTag("2")
 	tag3, _ := NewTag("3")

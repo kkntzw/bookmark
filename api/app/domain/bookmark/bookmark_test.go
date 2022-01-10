@@ -1,6 +1,7 @@
 package bookmark
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -150,4 +151,26 @@ func TestTags_戻り値のスライスを変更してもフィールドtagsは�
 	tags[2] = *tagC
 	// then
 	assert.NotEqual(t, bookmark.tags, tags)
+}
+
+func TestDeepCopy_同じ値で異なるポインタを持つBookmark型のインスタンスを返却する(t *testing.T) {
+	// given
+	bookmark, _ := New(args())
+	// when
+	copy := bookmark.DeepCopy()
+	// then
+	assert.Exactly(t, bookmark, copy)
+	assert.NotSame(t, bookmark, copy)
+}
+
+func TestDeepCopy_オリジナルとコピーのフィールドtagsは同一でないが同値となる(t *testing.T) {
+	// given
+	original, _ := New(args())
+	copy := original.DeepCopy()
+	// when
+	same := reflect.ValueOf(original.tags).Pointer() == reflect.ValueOf(copy.tags).Pointer()
+	equiv := reflect.DeepEqual(original.tags, copy.tags)
+	// then
+	assert.False(t, same)
+	assert.True(t, equiv)
 }

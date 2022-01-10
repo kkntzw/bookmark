@@ -52,3 +52,10 @@ func (b *Bookmark) URI() URI {
 func (b *Bookmark) Tags() []Tag {
 	return append([]Tag{}, b.tags...)
 }
+
+// インスタンスをディープコピーする。
+func (b Bookmark) DeepCopy() *Bookmark {
+	copy := &b
+	copy.tags = append([]Tag{}, b.tags...)
+	return copy
+}

@@ -3,6 +3,7 @@ module github.com/kkntzw/bookmark
 go 1.17
 
 require (
+	github.com/google/uuid v1.1.2
 	github.com/stretchr/testify v1.7.0
 	go.mongodb.org/mongo-driver v1.7.2
 	go.uber.org/zap v1.19.1

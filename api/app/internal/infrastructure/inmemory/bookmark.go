@@ -40,3 +40,19 @@ func (b *bookmarkRepository) Save(bookmark *bookmark.Bookmark) error {
 	b.store[bookmark.ID()] = *bookmark.DeepCopy()
 	return nil
 }
+
+// IDからブックマークを検索する。
+//
+// 該当するブックマークが存在する場合は複製したインスタンスを返却する。
+// nilを指定した場合はエラーを返却する。
+// 該当するブックマークが存在しない場合はnilを返却する。
+func (r *bookmarkRepository) FindByID(id *bookmark.ID) (*bookmark.Bookmark, error) {
+	if id == nil {
+		return nil, fmt.Errorf("argument \"id\" is nil")
+	}
+	bookmark, ok := r.store[*id]
+	if !ok {
+		return nil, nil
+	}
+	return bookmark.DeepCopy(), nil
+}

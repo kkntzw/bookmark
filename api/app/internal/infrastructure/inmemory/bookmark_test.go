@@ -21,6 +21,12 @@ func sampleBookmark() *bookmark.Bookmark {
 	return bookmark
 }
 
+// bookmark.ID型のサンプルインスタンス。
+func sampleBookmarkID() *bookmark.ID {
+	id, _ := bookmark.NewID("f81d4fae-7dec-11d0-a765-00a0c91e6bf6")
+	return id
+}
+
 func TestNewBookmarkRepository_bookmark_Repository型のインスタンスを返却する(t *testing.T) {
 	// when
 	object := NewBookmarkRepository()
@@ -85,5 +91,57 @@ func TestSave_不正な値を受け取るとエラーを返却する(t *testing.
 	err := repository.Save(bookmark)
 	// then
 	errString := "argument \"bookmark\" is nil"
+	assert.EqualError(t, err, errString)
+}
+
+func TestFindByID_該当するブックマークが存在する場合はbookmark_Bookmark型のインスタンスを返却する(t *testing.T) {
+	// given
+	repository := NewBookmarkRepository()
+	repository.Save(sampleBookmark())
+	id := sampleBookmarkID()
+	// when
+	actual, err := repository.FindByID(id)
+	// then
+	expected := sampleBookmark()
+	assert.Exactly(t, expected, actual)
+	assert.NoError(t, err)
+}
+
+func TestFindByID_戻り値bookmarkとフィールドstoreに保存した値は同一でないが同値となる(t *testing.T) {
+	// given
+	repository := NewBookmarkRepository()
+	repository.Save(sampleBookmark())
+	id := sampleBookmarkID()
+	bookmark, _ := repository.FindByID(id)
+	// when
+	concrete, _ := repository.(*bookmarkRepository)
+	stored := concrete.store[bookmark.ID()]
+	same := bookmark == &stored
+	equiv := reflect.DeepEqual(*bookmark, stored)
+	// then
+	assert.False(t, same)
+	assert.True(t, equiv)
+}
+
+func TestFindByID_該当するブックマークが存在しない場合はnilを返却する(t *testing.T) {
+	// given
+	repository := NewBookmarkRepository()
+	id := sampleBookmarkID()
+	// when
+	object, err := repository.FindByID(id)
+	// then
+	assert.Nil(t, object)
+	assert.NoError(t, err)
+}
+
+func TestFindByID_不正な値を受け取るとエラーを返却する(t *testing.T) {
+	// given
+	repository := NewBookmarkRepository()
+	id := (*bookmark.ID)(nil)
+	// when
+	object, err := repository.FindByID(id)
+	// then
+	assert.Nil(t, object)
+	errString := "argument \"id\" is nil"
 	assert.EqualError(t, err, errString)
 }

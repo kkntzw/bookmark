@@ -22,7 +22,7 @@ func NewBookmarkRepository() bookmark.Repository {
 // IDを生成する。
 //
 // バージョン4のUUIDを16進表記で生成する。
-func (b *bookmarkRepository) NextID() *bookmark.ID {
+func (r *bookmarkRepository) NextID() *bookmark.ID {
 	uuid, _ := uuid.NewRandom()
 	id, _ := bookmark.NewID(uuid.String())
 	return id
@@ -33,11 +33,11 @@ func (b *bookmarkRepository) NextID() *bookmark.ID {
 // nilを指定した場合はエラーを返却する。
 //
 // 複製したインスタンスをストレージに保存する。
-func (b *bookmarkRepository) Save(bookmark *bookmark.Bookmark) error {
+func (r *bookmarkRepository) Save(bookmark *bookmark.Bookmark) error {
 	if bookmark == nil {
 		return fmt.Errorf("argument \"bookmark\" is nil")
 	}
-	b.store[bookmark.ID()] = *bookmark.DeepCopy()
+	r.store[bookmark.ID()] = *bookmark.DeepCopy()
 	return nil
 }
 

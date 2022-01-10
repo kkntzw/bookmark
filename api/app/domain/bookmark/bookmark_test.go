@@ -77,19 +77,16 @@ func TestNew_不正な値を受け取るとエラーを返却する(t *testing.T
 	}
 }
 
-func TestNew_引数tagsに指定したスライスを変更してもフィールドtagsは影響を受けない(t *testing.T) {
+func TestNew_引数tagsとフィールドtagsは同一でないが同値となる(t *testing.T) {
 	// given
 	id, name, uri, tags := args()
 	bookmark, _ := New(id, name, uri, tags)
 	// when
-	tagA, _ := NewTag("A")
-	tagB, _ := NewTag("B")
-	tagC, _ := NewTag("C")
-	tags[0] = *tagA
-	tags[1] = *tagB
-	tags[2] = *tagC
+	same := reflect.ValueOf(tags).Pointer() == reflect.ValueOf(bookmark.tags).Pointer()
+	equiv := reflect.DeepEqual(tags, bookmark.tags)
 	// then
-	assert.NotEqual(t, bookmark.tags, tags)
+	assert.False(t, same)
+	assert.True(t, equiv)
 }
 
 func TestID_フィールドidを返却する(t *testing.T) {
@@ -138,19 +135,16 @@ func TestTags_フィールドtagsを返却する(t *testing.T) {
 	assert.Exactly(t, expected, actual)
 }
 
-func TestTags_戻り値のスライスを変更してもフィールドtagsは影響を受けない(t *testing.T) {
+func TestTags_戻り値とフィールドtagsは同一でないが同値となる(t *testing.T) {
 	// given
 	bookmark, _ := New(args())
 	tags := bookmark.Tags()
 	// when
-	tagA, _ := NewTag("A")
-	tagB, _ := NewTag("B")
-	tagC, _ := NewTag("C")
-	tags[0] = *tagA
-	tags[1] = *tagB
-	tags[2] = *tagC
+	same := reflect.ValueOf(tags).Pointer() == reflect.ValueOf(bookmark.tags).Pointer()
+	equiv := reflect.DeepEqual(tags, bookmark.tags)
 	// then
-	assert.NotEqual(t, bookmark.tags, tags)
+	assert.False(t, same)
+	assert.True(t, equiv)
 }
 
 func TestDeepCopy_同じ値で異なるポインタを持つBookmark型のインスタンスを返却する(t *testing.T) {

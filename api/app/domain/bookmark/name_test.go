@@ -84,7 +84,7 @@ func TestString_Name型からstring型に変換する(t *testing.T) {
 	assert.Exactly(t, expected, actual)
 }
 
-func TestCopy_同じ値を持つ異なるポインタのName型のインスタンスを返却する(t *testing.T) {
+func TestCopy_同じ値で異なるポインタを持つName型のインスタンスを返却する(t *testing.T) {
 	// given
 	name, _ := NewName("example")
 	// when

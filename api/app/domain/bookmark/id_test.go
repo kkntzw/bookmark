@@ -85,7 +85,7 @@ func TestString_ID型からstring型に変換する(t *testing.T) {
 	assert.Exactly(t, expected, actual)
 }
 
-func TestCopy_同じ値を持つ異なるポインタのID型のインスタンスを返却する(t *testing.T) {
+func TestCopy_同じ値で異なるポインタを持つID型のインスタンスを返却する(t *testing.T) {
 	// given
 	id, _ := NewID("f81d4fae-7dec-11d0-a765-00a0c91e6bf6")
 	// when

@@ -84,7 +84,7 @@ func TestString_Tag型からstring型に変換する(t *testing.T) {
 	assert.Exactly(t, expected, actual)
 }
 
-func TestCopy_同じ値を持つ異なるポインタのTag型のインスタンスを返却する(t *testing.T) {
+func TestCopy_同じ値で異なるポインタを持つTag型のインスタンスを返却する(t *testing.T) {
 	// given
 	tag, _ := NewTag("example")
 	// when

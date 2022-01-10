@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	"github.com/kkntzw/bookmark/domain/bookmark"
+	"github.com/kkntzw/bookmark/internal/domain/bookmark"
 )
 
 // ブックマークの永続化を担うリポジトリの具象型。

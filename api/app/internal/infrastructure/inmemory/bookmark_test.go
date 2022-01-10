@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/kkntzw/bookmark/domain/bookmark"
+	"github.com/kkntzw/bookmark/internal/domain/bookmark"
 	"github.com/stretchr/testify/assert"
 )
 

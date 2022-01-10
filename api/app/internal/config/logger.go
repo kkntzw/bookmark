@@ -12,11 +12,11 @@ import (
 // ロギングは log.Print[f|ln] ではなく config.Logger.[Debug|Info|Warn|Fatal|Error] で処理する。
 var Logger *zap.Logger
 
-// 設定ファイル ./resource/logging.yml に記載された内容を基に、ロガーを構築する。
+// 設定ファイル /configs/logging.yml に記載された内容を基に、ロガーを構築する。
 // 設定ファイルが存在しない場合、あるいは内容が不正な場合は異常終了する。
 func init() {
 	// 設定ファイルを開く。
-	file, err := ioutil.ReadFile("./resource/logging.yml")
+	file, err := ioutil.ReadFile("./configs/logging.yml")
 	if err != nil {
 		log.Fatalf("Failed to open the file \"logging.yml\": %v", err)
 	}

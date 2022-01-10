@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/kkntzw/bookmark/config"
+	"github.com/kkntzw/bookmark/internal/config"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"

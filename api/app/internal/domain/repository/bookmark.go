@@ -1,15 +1,19 @@
-package bookmark
+package repository
+
+import (
+	"github.com/kkntzw/bookmark/internal/domain/bookmark"
+)
 
 // ブックマークの永続化を担うリポジトリのインターフェース。
-type Repository interface {
+type Bookmark interface {
 	// IDを生成する。
-	NextID() *ID
+	NextID() *bookmark.ID
 
 	// IDからブックマークを検索する。
 	//
 	// 該当するブックマークが存在しない場合はnilを返却する。
-	FindByID(id *ID) (*Bookmark, error)
+	FindByID(id *bookmark.ID) (*bookmark.Bookmark, error)
 
 	// ブックマークを保存する。
-	Save(bookmark *Bookmark) error
+	Save(bookmark *bookmark.Bookmark) error
 }

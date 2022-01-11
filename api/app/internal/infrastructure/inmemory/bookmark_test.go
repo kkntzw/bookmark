@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/kkntzw/bookmark/internal/domain/bookmark"
+	"github.com/kkntzw/bookmark/internal/domain/repository"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -27,11 +28,11 @@ func sampleBookmarkID() *bookmark.ID {
 	return id
 }
 
-func TestNewBookmarkRepository_bookmark_Repository型のインスタンスを返却する(t *testing.T) {
+func TestNewBookmarkRepository_repository_Bookmark型のインスタンスを返却する(t *testing.T) {
 	// when
 	object := NewBookmarkRepository()
 	// then
-	interfaceObject := (*bookmark.Repository)(nil)
+	interfaceObject := (*repository.Bookmark)(nil)
 	assert.Implements(t, interfaceObject, object)
 	assert.NotNil(t, object)
 }

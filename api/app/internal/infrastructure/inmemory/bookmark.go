@@ -5,6 +5,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/kkntzw/bookmark/internal/domain/bookmark"
+	"github.com/kkntzw/bookmark/internal/domain/repository"
 )
 
 // ブックマークの永続化を担うリポジトリの具象型。
@@ -13,7 +14,7 @@ type bookmarkRepository struct {
 }
 
 // ブックマークの永続化を担うリポジトリを生成する。
-func NewBookmarkRepository() bookmark.Repository {
+func NewBookmarkRepository() repository.Bookmark {
 	return &bookmarkRepository{
 		store: make(map[bookmark.ID]bookmark.Bookmark),
 	}

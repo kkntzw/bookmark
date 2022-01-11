@@ -8,7 +8,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	bookmark "github.com/kkntzw/bookmark/internal/domain/bookmark"
+	entity "github.com/kkntzw/bookmark/internal/domain/entity"
 )
 
 // MockBookmark is a mock of Bookmark interface.
@@ -35,10 +35,10 @@ func (m *MockBookmark) EXPECT() *MockBookmarkMockRecorder {
 }
 
 // FindByID mocks base method.
-func (m *MockBookmark) FindByID(id *bookmark.ID) (*bookmark.Bookmark, error) {
+func (m *MockBookmark) FindByID(id *entity.ID) (*entity.Bookmark, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "FindByID", id)
-	ret0, _ := ret[0].(*bookmark.Bookmark)
+	ret0, _ := ret[0].(*entity.Bookmark)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -50,10 +50,10 @@ func (mr *MockBookmarkMockRecorder) FindByID(id interface{}) *gomock.Call {
 }
 
 // NextID mocks base method.
-func (m *MockBookmark) NextID() *bookmark.ID {
+func (m *MockBookmark) NextID() *entity.ID {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "NextID")
-	ret0, _ := ret[0].(*bookmark.ID)
+	ret0, _ := ret[0].(*entity.ID)
 	return ret0
 }
 
@@ -64,7 +64,7 @@ func (mr *MockBookmarkMockRecorder) NextID() *gomock.Call {
 }
 
 // Save mocks base method.
-func (m *MockBookmark) Save(bookmark *bookmark.Bookmark) error {
+func (m *MockBookmark) Save(bookmark *entity.Bookmark) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Save", bookmark)
 	ret0, _ := ret[0].(error)

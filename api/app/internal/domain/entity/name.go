@@ -1,18 +1,18 @@
-package bookmark
+package entity
 
 import "fmt"
 
-// タグを表す値オブジェクト。
-type Tag struct {
+// ブックマーク名を表す値オブジェクト。
+type Name struct {
 	value string
 }
 
-// タグを検証する。
+// ブックマーク名を検証する。
 //
 // 文字列長が0の場合はエラーを返却する。
 // 制御文字(\u0000-\u001F\u007F)を含む場合はエラーを返却する。
 // 空白(\u0020\u0085\u00A0)以外の文字を含まない場合はエラーを返却する。
-func validateTag(s string) error {
+func validateName(s string) error {
 	if len(s) == 0 {
 		return fmt.Errorf("string length is 0")
 	}
@@ -31,22 +31,22 @@ func validateTag(s string) error {
 	return nil
 }
 
-// タグを表す値オブジェクトを生成する。
+// ブックマーク名を表す値オブジェクトを生成する。
 //
 // 不正な値を指定した場合はエラーを返却する。
-func NewTag(v string) (*Tag, error) {
-	if err := validateTag(v); err != nil {
+func NewName(v string) (*Name, error) {
+	if err := validateName(v); err != nil {
 		return nil, err
 	}
-	return &Tag{v}, nil
+	return &Name{v}, nil
 }
 
 // string型に変換する。
-func (tag *Tag) String() string {
-	return tag.value
+func (name *Name) String() string {
+	return name.value
 }
 
 // インスタンスを複製する。
-func (tag Tag) Copy() *Tag {
-	return &tag
+func (name Name) Copy() *Name {
+	return &name
 }

@@ -1,4 +1,4 @@
-package bookmark
+package entity
 
 import (
 	"net/url"

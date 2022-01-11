@@ -4,27 +4,27 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/kkntzw/bookmark/internal/domain/bookmark"
+	"github.com/kkntzw/bookmark/internal/domain/entity"
 	"github.com/kkntzw/bookmark/internal/domain/repository"
 	"github.com/stretchr/testify/assert"
 )
 
-// bookmark.Bookmark型のサンプルインスタンス。
-func sampleBookmark() *bookmark.Bookmark {
-	id, _ := bookmark.NewID("f81d4fae-7dec-11d0-a765-00a0c91e6bf6")
-	name, _ := bookmark.NewName("example")
-	uri, _ := bookmark.NewURI("https://example.com")
-	tag1, _ := bookmark.NewTag("1")
-	tag2, _ := bookmark.NewTag("2")
-	tag3, _ := bookmark.NewTag("3")
-	tags := []bookmark.Tag{*tag1, *tag2, *tag3}
-	bookmark, _ := bookmark.New(id, name, uri, tags)
+// entity.Bookmark型のサンプルインスタンス。
+func sampleBookmark() *entity.Bookmark {
+	id, _ := entity.NewID("f81d4fae-7dec-11d0-a765-00a0c91e6bf6")
+	name, _ := entity.NewName("example")
+	uri, _ := entity.NewURI("https://example.com")
+	tag1, _ := entity.NewTag("1")
+	tag2, _ := entity.NewTag("2")
+	tag3, _ := entity.NewTag("3")
+	tags := []entity.Tag{*tag1, *tag2, *tag3}
+	bookmark, _ := entity.NewBookmark(id, name, uri, tags)
 	return bookmark
 }
 
-// bookmark.ID型のサンプルインスタンス。
-func sampleBookmarkID() *bookmark.ID {
-	id, _ := bookmark.NewID("f81d4fae-7dec-11d0-a765-00a0c91e6bf6")
+// entity.ID型のサンプルインスタンス。
+func sampleBookmarkID() *entity.ID {
+	id, _ := entity.NewID("f81d4fae-7dec-11d0-a765-00a0c91e6bf6")
 	return id
 }
 
@@ -44,17 +44,17 @@ func TestNewBookmarkRepository_戻り値は初期化済みのフィールドstor
 	concrete, ok := abstract.(*bookmarkRepository)
 	// then
 	assert.True(t, ok)
-	expected := map[bookmark.ID]bookmark.Bookmark{}
+	expected := map[entity.ID]entity.Bookmark{}
 	assert.Exactly(t, expected, concrete.store)
 }
 
-func TestNextID_bookmark_ID型のインスタンスを返却する(t *testing.T) {
+func TestNextID_entity_ID型のインスタンスを返却する(t *testing.T) {
 	// given
 	repository := NewBookmarkRepository()
 	// when
 	object := repository.NextID()
 	// then
-	expectedType := &bookmark.ID{}
+	expectedType := &entity.ID{}
 	assert.IsType(t, expectedType, object)
 	assert.NotNil(t, object)
 }
@@ -87,7 +87,7 @@ func TestSave_引数bookmarkとフィールドstoreに保存した値は同一�
 func TestSave_不正な値を受け取るとエラーを返却する(t *testing.T) {
 	// given
 	repository := NewBookmarkRepository()
-	bookmark := (*bookmark.Bookmark)(nil)
+	bookmark := (*entity.Bookmark)(nil)
 	// when
 	err := repository.Save(bookmark)
 	// then
@@ -95,7 +95,7 @@ func TestSave_不正な値を受け取るとエラーを返却する(t *testing.
 	assert.EqualError(t, err, errString)
 }
 
-func TestFindByID_該当するブックマークが存在する場合はbookmark_Bookmark型のインスタンスを返却する(t *testing.T) {
+func TestFindByID_該当するブックマークが存在する場合はentity_Bookmark型のインスタンスを返却する(t *testing.T) {
 	// given
 	repository := NewBookmarkRepository()
 	repository.Save(sampleBookmark())
@@ -138,7 +138,7 @@ func TestFindByID_該当するブックマークが存在しない場合はnil�
 func TestFindByID_不正な値を受け取るとエラーを返却する(t *testing.T) {
 	// given
 	repository := NewBookmarkRepository()
-	id := (*bookmark.ID)(nil)
+	id := (*entity.ID)(nil)
 	// when
 	object, err := repository.FindByID(id)
 	// then

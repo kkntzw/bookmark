@@ -1,4 +1,4 @@
-package bookmark
+package entity
 
 import "fmt"
 
@@ -15,7 +15,7 @@ type Bookmark struct {
 // nilを指定した場合はエラーを返却する。
 //
 // 複製したスライスをフィールドに設定する。
-func New(id *ID, name *Name, uri *URI, tags []Tag) (*Bookmark, error) {
+func NewBookmark(id *ID, name *Name, uri *URI, tags []Tag) (*Bookmark, error) {
 	if id == nil {
 		return nil, fmt.Errorf("argument \"id\" is nil")
 	}

@@ -1,4 +1,4 @@
-package bookmark
+package entity
 
 import (
 	"reflect"
@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// 関数 New() のサンプル引数。
+// 関数 NewBookmark() のサンプル引数。
 func args() (*ID, *Name, *URI, []Tag) {
 	id, _ := NewID("f81d4fae-7dec-11d0-a765-00a0c91e6bf6")
 	name, _ := NewName("example")
@@ -19,7 +19,7 @@ func args() (*ID, *Name, *URI, []Tag) {
 	return id, name, uri, tags
 }
 
-func TestNew_正当な値を受け取るとBookmark型のインスタンスを返却する(t *testing.T) {
+func TestNewBookmark_正当な値を受け取るとBookmark型のインスタンスを返却する(t *testing.T) {
 	tag1, _ := NewTag("1")
 	tag2, _ := NewTag("2")
 	tag3, _ := NewTag("3")
@@ -38,7 +38,7 @@ func TestNew_正当な値を受け取るとBookmark型のインスタンスを�
 		uri, _ := NewURI("https://example.com")
 		tags := p.tags
 		// when
-		actual, err := New(id, name, uri, tags)
+		actual, err := NewBookmark(id, name, uri, tags)
 		// then
 		expected := &Bookmark{*id, *name, *uri, tags}
 		assert.Exactly(t, expected, actual)
@@ -46,7 +46,7 @@ func TestNew_正当な値を受け取るとBookmark型のインスタンスを�
 	}
 }
 
-func TestNew_不正な値を受け取るとエラーを返却する(t *testing.T) {
+func TestNewBookmark_不正な値を受け取るとエラーを返却する(t *testing.T) {
 	id, _ := NewID("f81d4fae-7dec-11d0-a765-00a0c91e6bf6")
 	name, _ := NewName("example")
 	uri, _ := NewURI("https://example.com")
@@ -70,17 +70,17 @@ func TestNew_不正な値を受け取るとエラーを返却する(t *testing.T
 		uri := p.uri
 		tags := p.tags
 		// when
-		object, err := New(id, name, uri, tags)
+		object, err := NewBookmark(id, name, uri, tags)
 		// then
 		assert.Nil(t, object)
 		assert.EqualError(t, err, p.errString)
 	}
 }
 
-func TestNew_引数tagsとフィールドtagsは同一でないが同値となる(t *testing.T) {
+func TestNewBookmark_引数tagsとフィールドtagsは同一でないが同値となる(t *testing.T) {
 	// given
 	id, name, uri, tags := args()
-	bookmark, _ := New(id, name, uri, tags)
+	bookmark, _ := NewBookmark(id, name, uri, tags)
 	// when
 	same := reflect.ValueOf(tags).Pointer() == reflect.ValueOf(bookmark.tags).Pointer()
 	equiv := reflect.DeepEqual(tags, bookmark.tags)
@@ -91,7 +91,7 @@ func TestNew_引数tagsとフィールドtagsは同一でないが同値とな�
 
 func TestID_フィールドidを返却する(t *testing.T) {
 	// given
-	bookmark, _ := New(args())
+	bookmark, _ := NewBookmark(args())
 	// when
 	actual := bookmark.ID()
 	// then
@@ -102,7 +102,7 @@ func TestID_フィールドidを返却する(t *testing.T) {
 
 func TestName_フィールドnameを返却する(t *testing.T) {
 	// given
-	bookmark, _ := New(args())
+	bookmark, _ := NewBookmark(args())
 	// when
 	actual := bookmark.Name()
 	// then
@@ -113,7 +113,7 @@ func TestName_フィールドnameを返却する(t *testing.T) {
 
 func TestURI_フィールドuriを返却する(t *testing.T) {
 	// given
-	bookmark, _ := New(args())
+	bookmark, _ := NewBookmark(args())
 	// when
 	actual := bookmark.URI()
 	// then
@@ -124,7 +124,7 @@ func TestURI_フィールドuriを返却する(t *testing.T) {
 
 func TestTags_フィールドtagsを返却する(t *testing.T) {
 	// given
-	bookmark, _ := New(args())
+	bookmark, _ := NewBookmark(args())
 	// when
 	actual := bookmark.Tags()
 	// then
@@ -137,7 +137,7 @@ func TestTags_フィールドtagsを返却する(t *testing.T) {
 
 func TestTags_戻り値とフィールドtagsは同一でないが同値となる(t *testing.T) {
 	// given
-	bookmark, _ := New(args())
+	bookmark, _ := NewBookmark(args())
 	tags := bookmark.Tags()
 	// when
 	same := reflect.ValueOf(tags).Pointer() == reflect.ValueOf(bookmark.tags).Pointer()
@@ -149,7 +149,7 @@ func TestTags_戻り値とフィールドtagsは同一でないが同値とな�
 
 func TestDeepCopy_同じ値で異なるポインタを持つBookmark型のインスタンスを返却する(t *testing.T) {
 	// given
-	bookmark, _ := New(args())
+	bookmark, _ := NewBookmark(args())
 	// when
 	copy := bookmark.DeepCopy()
 	// then
@@ -159,7 +159,7 @@ func TestDeepCopy_同じ値で異なるポインタを持つBookmark型のイン
 
 func TestDeepCopy_オリジナルとコピーのフィールドtagsは同一でないが同値となる(t *testing.T) {
 	// given
-	original, _ := New(args())
+	original, _ := NewBookmark(args())
 	copy := original.DeepCopy()
 	// when
 	same := reflect.ValueOf(original.tags).Pointer() == reflect.ValueOf(copy.tags).Pointer()

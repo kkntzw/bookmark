@@ -53,13 +53,13 @@ func TestRegister_正当な値を受け取るとnilを返却する(t *testing.T)
 	service := mock_service.NewMockBookmark(ctrl)
 	service.EXPECT().Exists(sample_entity.Bookmark()).Return(false, nil)
 	usecase := NewBookmarkUsecase(repository, service)
-	command := &command.RegisterBookmark{
+	cmd := &command.RegisterBookmark{
 		Name: "example",
 		URI:  "https://example.com",
 		Tags: []string{"1", "2", "3"},
 	}
 	// when
-	err := usecase.Register(command)
+	err := usecase.Register(cmd)
 	// then
 	assert.NoError(t, err)
 }
@@ -83,13 +83,13 @@ func TestRegister_不正な値を受け取るとエラーを返却する(t *test
 		repository.EXPECT().NextID().Return(sample_entity.BookmarkID())
 		service := mock_service.NewMockBookmark(ctrl)
 		usecase := NewBookmarkUsecase(repository, service)
-		command := &command.RegisterBookmark{
+		cmd := &command.RegisterBookmark{
 			Name: p.name,
 			URI:  p.uri,
 			Tags: p.tags,
 		}
 		// when
-		err := usecase.Register(command)
+		err := usecase.Register(cmd)
 		// then
 		assert.EqualError(t, err, p.errString)
 	}
@@ -104,13 +104,13 @@ func TestRegister_ブックマークが重複して存在する場合はエラ�
 	service := mock_service.NewMockBookmark(ctrl)
 	service.EXPECT().Exists(sample_entity.Bookmark()).Return(true, nil)
 	usecase := NewBookmarkUsecase(repository, service)
-	command := &command.RegisterBookmark{
+	cmd := &command.RegisterBookmark{
 		Name: "example",
 		URI:  "https://example.com",
 		Tags: []string{"1", "2", "3"},
 	}
 	// when
-	err := usecase.Register(command)
+	err := usecase.Register(cmd)
 	// then
 	errString := "bookmark already exists"
 	assert.EqualError(t, err, errString)
@@ -125,13 +125,13 @@ func TestRegister_ブックマーク重複確認中にエラーが発生した�
 	service := mock_service.NewMockBookmark(ctrl)
 	service.EXPECT().Exists(sample_entity.Bookmark()).Return(false, errors.New("some error"))
 	usecase := NewBookmarkUsecase(repository, service)
-	command := &command.RegisterBookmark{
+	cmd := &command.RegisterBookmark{
 		Name: "example",
 		URI:  "https://example.com",
 		Tags: []string{"1", "2", "3"},
 	}
 	// when
-	err := usecase.Register(command)
+	err := usecase.Register(cmd)
 	// then
 	errString := "some error"
 	assert.EqualError(t, err, errString)
@@ -147,13 +147,13 @@ func TestRegister_ブックマーク保存中にエラーが発生した場合�
 	service := mock_service.NewMockBookmark(ctrl)
 	service.EXPECT().Exists(sample_entity.Bookmark()).Return(false, nil)
 	usecase := NewBookmarkUsecase(repository, service)
-	command := &command.RegisterBookmark{
+	cmd := &command.RegisterBookmark{
 		Name: "example",
 		URI:  "https://example.com",
 		Tags: []string{"1", "2", "3"},
 	}
 	// when
-	err := usecase.Register(command)
+	err := usecase.Register(cmd)
 	// then
 	errString := "some error"
 	assert.EqualError(t, err, errString)

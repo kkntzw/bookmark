@@ -34,18 +34,18 @@ func NewBookmarkUsecase(repository repository.Bookmark, service service.Bookmark
 // 不正なコマンドを受け取るとエラーを返却する。
 // ブックマークが重複して存在する場合はエラーを返却する。
 // リポジトリの操作中にエラーが発生した場合はエラーを返却する。
-func (u *bookmarkUsecase) Register(command *command.RegisterBookmark) error {
+func (u *bookmarkUsecase) Register(cmd *command.RegisterBookmark) error {
 	id := u.repository.NextID()
-	name, err := entity.NewName(command.Name)
+	name, err := entity.NewName(cmd.Name)
 	if err != nil {
 		return fmt.Errorf("command \"Name\" is invalid")
 	}
-	uri, err := entity.NewURI(command.URI)
+	uri, err := entity.NewURI(cmd.URI)
 	if err != nil {
 		return fmt.Errorf("command \"URI\" is invalid")
 	}
-	tags := make([]entity.Tag, len(command.Tags))
-	for i, v := range command.Tags {
+	tags := make([]entity.Tag, len(cmd.Tags))
+	for i, v := range cmd.Tags {
 		tag, err := entity.NewTag(v)
 		if err != nil {
 			return fmt.Errorf("command \"Tags\" is invalid")

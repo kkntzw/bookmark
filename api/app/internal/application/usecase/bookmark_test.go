@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -68,30 +69,28 @@ func TestRegister_不正な値を受け取るとエラーを返却する(t *test
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	params := []struct {
-		name      string
-		uri       string
-		tags      []string
-		errString string
+		cmd *command.RegisterBookmark
+		expected error
 	}{
-		{name: "", uri: "https://example.com", tags: []string{"1"}, errString: "command \"Name\" is invalid"},
-		{name: "example", uri: "", tags: []string{"1"}, errString: "command \"URI\" is invalid"},
-		{name: "example", uri: "https://example.com", tags: []string{""}, errString: "command \"Tags\" is invalid"},
+		{
+			cmd: nil,
+			expected: fmt.Errorf("argument \"cmd\" is nil"),
+		},
+		{
+			cmd: &command.RegisterBookmark{Name: "", URI: "", Tags: []string{""}},
+			expected: &command.InvalidCommandError{Args: []string{"Name", "URI", "Tags"}},
+		},
 	}
 	for _, p := range params {
 		// given
 		repository := mock_repository.NewMockBookmark(ctrl)
-		repository.EXPECT().NextID().Return(sample_entity.BookmarkID())
 		service := mock_service.NewMockBookmark(ctrl)
 		usecase := NewBookmarkUsecase(repository, service)
-		cmd := &command.RegisterBookmark{
-			Name: p.name,
-			URI:  p.uri,
-			Tags: p.tags,
-		}
+		cmd := p.cmd
 		// when
-		err := usecase.Register(cmd)
+		actual := usecase.Register(cmd)
 		// then
-		assert.EqualError(t, err, p.errString)
+		assert.Exactly(t, p.expected, actual)
 	}
 }
 

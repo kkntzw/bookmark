@@ -30,15 +30,15 @@ func TestRegisterBookmarkValidate_不正な場合はInvalidCommandErrorを返却
 		expected error
 	}{
 		{
-			cmd: &RegisterBookmark{Name: "", URI: "https://example.com", Tags: []string{"A", "B", "C"}},
+			cmd:      &RegisterBookmark{Name: "", URI: "https://example.com", Tags: []string{"A", "B", "C"}},
 			expected: &InvalidCommandError{Args: []string{"Name"}},
 		},
 		{
-			cmd: &RegisterBookmark{Name: "example", URI: "", Tags: []string{"A", "B", "C"}},
+			cmd:      &RegisterBookmark{Name: "example", URI: "", Tags: []string{"A", "B", "C"}},
 			expected: &InvalidCommandError{Args: []string{"URI"}},
 		},
 		{
-			cmd: &RegisterBookmark{Name: "example", URI: "https://example.com", Tags: []string{"A", "", "C"}},
+			cmd:      &RegisterBookmark{Name: "example", URI: "https://example.com", Tags: []string{"A", "", "C"}},
 			expected: &InvalidCommandError{Args: []string{"Tags"}},
 		},
 	}

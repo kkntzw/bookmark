@@ -69,15 +69,15 @@ func TestRegister_不正な値を受け取るとエラーを返却する(t *test
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	params := []struct {
-		cmd *command.RegisterBookmark
+		cmd      *command.RegisterBookmark
 		expected error
 	}{
 		{
-			cmd: nil,
+			cmd:      nil,
 			expected: fmt.Errorf("argument \"cmd\" is nil"),
 		},
 		{
-			cmd: &command.RegisterBookmark{Name: "", URI: "", Tags: []string{""}},
+			cmd:      &command.RegisterBookmark{Name: "", URI: "", Tags: []string{""}},
 			expected: &command.InvalidCommandError{Args: []string{"Name", "URI", "Tags"}},
 		},
 	}

@@ -52,10 +52,13 @@ func (u *bookmarkUsecase) Register(cmd *command.RegisterBookmark) error {
 	bookmark, _ := entity.NewBookmark(id, name, uri, tags)
 	exists, err := u.service.Exists(bookmark)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed at service.Exists: %w", err)
 	}
 	if exists {
 		return fmt.Errorf("bookmark already exists")
 	}
-	return u.repository.Save(bookmark)
+	if err := u.repository.Save(bookmark); err != nil {
+		return fmt.Errorf("failed at repository.Save: %w", err)
+	}
+	return nil
 }

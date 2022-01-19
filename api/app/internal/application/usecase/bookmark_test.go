@@ -1,7 +1,6 @@
 package usecase
 
 import (
-	"errors"
 	"fmt"
 	"testing"
 
@@ -126,7 +125,7 @@ func TestRegister_ブックマーク重複確認中にエラーが発生した�
 	repository := mock_repository.NewMockBookmark(ctrl)
 	repository.EXPECT().NextID().Return(sample_entity.BookmarkID())
 	service := mock_service.NewMockBookmark(ctrl)
-	service.EXPECT().Exists(sample_entity.Bookmark()).Return(false, errors.New("some error"))
+	service.EXPECT().Exists(sample_entity.Bookmark()).Return(false, fmt.Errorf("some error"))
 	usecase := NewBookmarkUsecase(repository, service)
 	cmd := &command.RegisterBookmark{
 		Name: "example",
@@ -136,7 +135,7 @@ func TestRegister_ブックマーク重複確認中にエラーが発生した�
 	// when
 	err := usecase.Register(cmd)
 	// then
-	errString := "some error"
+	errString := "failed at service.Exists: some error"
 	assert.EqualError(t, err, errString)
 }
 
@@ -146,7 +145,7 @@ func TestRegister_ブックマーク保存中にエラーが発生した場合�
 	// given
 	repository := mock_repository.NewMockBookmark(ctrl)
 	repository.EXPECT().NextID().Return(sample_entity.BookmarkID())
-	repository.EXPECT().Save(sample_entity.Bookmark()).Return(errors.New("some error"))
+	repository.EXPECT().Save(sample_entity.Bookmark()).Return(fmt.Errorf("some error"))
 	service := mock_service.NewMockBookmark(ctrl)
 	service.EXPECT().Exists(sample_entity.Bookmark()).Return(false, nil)
 	usecase := NewBookmarkUsecase(repository, service)
@@ -158,6 +157,6 @@ func TestRegister_ブックマーク保存中にエラーが発生した場合�
 	// when
 	err := usecase.Register(cmd)
 	// then
-	errString := "some error"
+	errString := "failed at repository.Save: some error"
 	assert.EqualError(t, err, errString)
 }

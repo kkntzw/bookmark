@@ -36,7 +36,7 @@ func (s *bookmarkService) Exists(bookmark *entity.Bookmark) (bool, error) {
 	id := bookmark.ID()
 	object, err := s.repository.FindByID(&id)
 	if err != nil {
-		return false, err
+		return false, fmt.Errorf("failed at repository.FindByID: %w", err)
 	}
 	exists := object != nil
 	return exists, nil

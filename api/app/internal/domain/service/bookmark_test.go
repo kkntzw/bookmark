@@ -1,7 +1,7 @@
 package service
 
 import (
-	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -88,13 +88,13 @@ func TestExists_リポジトリでエラーが発生した場合はエラーを�
 	defer ctrl.Finish()
 	// given
 	repository := mock_repository.NewMockBookmark(ctrl)
-	repository.EXPECT().FindByID(sample_entity.BookmarkID()).Return(nil, errors.New("some error"))
+	repository.EXPECT().FindByID(sample_entity.BookmarkID()).Return(nil, fmt.Errorf("some error"))
 	service := NewBookmarkService(repository)
 	bookmark := sample_entity.Bookmark()
 	// when
 	exists, err := service.Exists(bookmark)
 	// then
 	assert.False(t, exists)
-	errString := "some error"
+	errString := "failed at repository.FindByID: some error"
 	assert.EqualError(t, err, errString)
 }

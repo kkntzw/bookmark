@@ -74,11 +74,11 @@ func TestEquals_異なる値を持つName型のインスタンスは等しくな
 	assert.False(t, equiv)
 }
 
-func TestString_Name型からstring型に変換する(t *testing.T) {
+func TestValue_Name型から値を取得する(t *testing.T) {
 	// given
 	name, _ := NewName("example")
 	// when
-	actual := name.String()
+	actual := name.Value()
 	// then
 	expected := "example"
 	assert.Exactly(t, expected, actual)

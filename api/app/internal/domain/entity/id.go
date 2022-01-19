@@ -37,8 +37,8 @@ func NewID(v string) (*ID, error) {
 	return &ID{v}, nil
 }
 
-// string型に変換する。
-func (id *ID) String() string {
+// 値を取得する。
+func (id *ID) Value() string {
 	return id.value
 }
 

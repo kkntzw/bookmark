@@ -41,8 +41,8 @@ func NewName(v string) (*Name, error) {
 	return &Name{v}, nil
 }
 
-// string型に変換する。
-func (name *Name) String() string {
+// 値を取得する。
+func (name *Name) Value() string {
 	return name.value
 }
 

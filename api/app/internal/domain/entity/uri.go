@@ -43,9 +43,9 @@ func NewURI(v string) (*URI, error) {
 	return &URI{*u}, nil
 }
 
-// string型に変換する。
-func (uri *URI) String() string {
-	return uri.value.String()
+// 値を取得する。
+func (uri *URI) Value() url.URL {
+	return uri.value
 }
 
 // インスタンスを複製する。

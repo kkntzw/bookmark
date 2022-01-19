@@ -74,11 +74,11 @@ func TestEquals_異なる値を持つTag型のインスタンスは等しくな�
 	assert.False(t, equiv)
 }
 
-func TestString_Tag型からstring型に変換する(t *testing.T) {
+func TestValue_Tag型から値を取得する(t *testing.T) {
 	// given
 	tag, _ := NewTag("example")
 	// when
-	actual := tag.String()
+	actual := tag.Value()
 	// then
 	expected := "example"
 	assert.Exactly(t, expected, actual)

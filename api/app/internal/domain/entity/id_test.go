@@ -75,11 +75,11 @@ func TestEquals_異なる値を持つID型のインスタンスは等しくな�
 	assert.False(t, equiv)
 }
 
-func TestString_ID型からstring型に変換する(t *testing.T) {
+func TestValue_ID型から値を取得する(t *testing.T) {
 	// given
 	id, _ := NewID("f81d4fae-7dec-11d0-a765-00a0c91e6bf6")
 	// when
-	actual := id.String()
+	actual := id.Value()
 	// then
 	expected := "f81d4fae-7dec-11d0-a765-00a0c91e6bf6"
 	assert.Exactly(t, expected, actual)

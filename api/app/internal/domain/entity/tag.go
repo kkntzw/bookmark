@@ -41,8 +41,8 @@ func NewTag(v string) (*Tag, error) {
 	return &Tag{v}, nil
 }
 
-// string型に変換する。
-func (tag *Tag) String() string {
+// 値を取得する。
+func (tag *Tag) Value() string {
 	return tag.value
 }
 

@@ -86,13 +86,13 @@ func TestEquals_異なる値を持つURI型のインスタンスは等しくな�
 	assert.False(t, equiv)
 }
 
-func TestString_URI型からstring型に変換する(t *testing.T) {
+func TestValue_URI型から値を取得する(t *testing.T) {
 	// given
 	uri, _ := NewURI("https://example.com")
 	// when
-	actual := uri.String()
+	actual := uri.Value()
 	// then
-	expected := "https://example.com"
+	expected := url.URL{Scheme: "https", Host: "example.com"}
 	assert.Exactly(t, expected, actual)
 }
 

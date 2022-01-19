@@ -7,6 +7,7 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/kkntzw/bookmark/internal/application/command"
+	"github.com/kkntzw/bookmark/internal/domain/entity"
 	sample_entity "github.com/kkntzw/bookmark/test/data/domain/entity"
 	mock_repository "github.com/kkntzw/bookmark/test/mock/domain/repository"
 	mock_service "github.com/kkntzw/bookmark/test/mock/domain/service"
@@ -68,6 +69,9 @@ func TestRegister_正当な値を受け取るとnilを返却する(t *testing.T)
 func TestRegister_不正な値を受け取るとエラーを返却する(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
+	_, errName := entity.NewName("")
+	_, errUri := entity.NewURI("")
+	_, errTag := entity.NewTag("")
 	params := []struct {
 		cmd      *command.RegisterBookmark
 		expected error
@@ -78,7 +82,7 @@ func TestRegister_不正な値を受け取るとエラーを返却する(t *test
 		},
 		{
 			cmd:      &command.RegisterBookmark{Name: "", URI: "", Tags: []string{""}},
-			expected: &command.InvalidCommandError{Args: []string{"Name", "URI", "Tags"}},
+			expected: &command.InvalidCommandError{Args: map[string]error{"Name": errName, "URI": errUri, "Tags": errTag}},
 		},
 	}
 	for _, p := range params {

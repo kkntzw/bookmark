@@ -1,6 +1,7 @@
 package command
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -11,10 +12,22 @@ func TestInvalidCommandError_エラー状態を表す(t *testing.T) {
 		err      error
 		expected string
 	}{
-		{err: &InvalidCommandError{}, expected: "command is invalid"},
-		{err: &InvalidCommandError{Args: []string{}}, expected: "command is invalid"},
-		{err: &InvalidCommandError{Args: []string{"A"}}, expected: "command is invalid: A"},
-		{err: &InvalidCommandError{Args: []string{"A", "B"}}, expected: "command is invalid: A, B"},
+		{
+			err:      &InvalidCommandError{},
+			expected: "command is invalid",
+		},
+		{
+			err:      &InvalidCommandError{Args: map[string]error{}},
+			expected: "command is invalid",
+		},
+		{
+			err:      &InvalidCommandError{Args: map[string]error{"A": fmt.Errorf("some error")}},
+			expected: "command is invalid: [A: some error]",
+		},
+		{
+			err:      &InvalidCommandError{Args: map[string]error{"A": fmt.Errorf("some error"), "B": fmt.Errorf("some error")}},
+			expected: "command is invalid: [A: some error, B: some error]",
+		},
 	}
 	for _, p := range params {
 		// given

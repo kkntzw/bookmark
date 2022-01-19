@@ -2,7 +2,7 @@ package server
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/golang/mock/gomock"
@@ -75,32 +75,39 @@ func TestCreateBookmark_正当な値を受け取るとnilを返却する(t *test
 func TestCreateBookmark_不正な値を受け取るとInvalidArgumentを返却する(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	params := []struct {
-		req      *pb.CreateBookmarkRequest
-		expected error
-	}{
-		{
-			req:      nil,
-			expected: status.Error(codes.InvalidArgument, "argument \"req\" is nil"),
-		},
-		{
-			req:      &pb.CreateBookmarkRequest{BookmarkName: "", Uri: "", Tags: []*pb.Tag{{TagName: ""}}},
-			expected: status.Error(codes.InvalidArgument, "request is invalid"),
-		},
+	// given
+	usecase := mock_usecase.NewMockBookmark(ctrl)
+	server := NewBookmarkServer(usecase)
+	ctx := context.TODO()
+	req := (*pb.CreateBookmarkRequest)(nil)
+	// when
+	object, actual := server.CreateBookmark(ctx, req)
+	// then
+	assert.Nil(t, object)
+	expected := status.Error(codes.InvalidArgument, "argument \"req\" is nil")
+	assert.Exactly(t, expected, actual)
+}
+
+func TestCreateBookmark_コマンドが不正な場合はInvalidArgumentを返却する(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	// given
+	usecase := mock_usecase.NewMockBookmark(ctrl)
+	cmd := &command.RegisterBookmark{
+		Name: "",
+		URI:  "",
+		Tags: []string{""},
 	}
-	for _, p := range params {
-		// given
-		usecase := mock_usecase.NewMockBookmark(ctrl)
-		server := NewBookmarkServer(usecase)
-		ctx := context.TODO()
-		req := p.req
-		// when
-		object, actual := server.CreateBookmark(ctx, req)
-		// then
-		assert.Nil(t, object)
-		expected := p.expected
-		assert.Exactly(t, expected, actual)
-	}
+	usecase.EXPECT().Register(cmd).Return(&command.InvalidCommandError{})
+	server := NewBookmarkServer(usecase)
+	ctx := context.TODO()
+	req := &pb.CreateBookmarkRequest{BookmarkName: "", Uri: "", Tags: []*pb.Tag{{TagName: ""}}}
+	// when
+	object, actual := server.CreateBookmark(ctx, req)
+	// then
+	assert.Nil(t, object)
+	expected := status.Error(codes.InvalidArgument, "request is invalid")
+	assert.Exactly(t, expected, actual)
 }
 
 func TestCreateBookmark_ブックマーク登録中にエラーが発生した場合はInternalを返却する(t *testing.T) {
@@ -113,7 +120,7 @@ func TestCreateBookmark_ブックマーク登録中にエラーが発生した�
 		URI:  "https://example.com",
 		Tags: []string{"1", "2", "3"},
 	}
-	usecase.EXPECT().Register(cmd).Return(errors.New("some error"))
+	usecase.EXPECT().Register(cmd).Return(fmt.Errorf("some error"))
 	server := NewBookmarkServer(usecase)
 	ctx := context.TODO()
 	req := &pb.CreateBookmarkRequest{
@@ -129,6 +136,6 @@ func TestCreateBookmark_ブックマーク登録中にエラーが発生した�
 	object, actual := server.CreateBookmark(ctx, req)
 	// then
 	assert.Nil(t, object)
-	expected := status.Error(codes.Internal, "some error")
+	expected := status.Error(codes.Internal, "server error")
 	assert.Exactly(t, expected, actual)
 }

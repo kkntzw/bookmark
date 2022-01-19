@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"errors"
 
 	"github.com/kkntzw/bookmark/internal/application/command"
 	"github.com/kkntzw/bookmark/internal/application/usecase"
@@ -40,11 +41,13 @@ func (s *bookmarkServer) CreateBookmark(ctx context.Context, req *pb.CreateBookm
 		tags[i] = tag.TagName
 	}
 	cmd := &command.RegisterBookmark{Name: name, URI: uri, Tags: tags}
-	if err := cmd.Validate(); err != nil {
+	err := s.usecase.Register(cmd)
+	var icerr *command.InvalidCommandError
+	if errors.As(err, &icerr) {
 		return nil, status.Error(codes.InvalidArgument, "request is invalid")
 	}
-	if err := s.usecase.Register(cmd); err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+	if err != nil {
+		return nil, status.Error(codes.Internal, "server error")
 	}
 	return &emptypb.Empty{}, nil
 }

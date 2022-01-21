@@ -48,6 +48,11 @@ func (uri *URI) Value() url.URL {
 	return uri.value
 }
 
+// string型の値を取得する。
+func (uri *URI) String() string {
+	return uri.value.String()
+}
+
 // インスタンスを複製する。
 func (uri URI) Copy() *URI {
 	return &uri

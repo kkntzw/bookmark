@@ -4,111 +4,56 @@ package bookmark;
 
 import "google/protobuf/empty.proto";
 
-option go_package = "./bookmark";
+option go_package = "./pb";
 
-// ブックマークを管理するサービス。
-service Bookmarker {
-  // 新規のブックマークを作成する。
-  rpc CreateBookmark(Bookmark) returns (Bookmark);
-
-  // 条件に合致するブックマークを検索する。
-  // 完全一致検索ではなく、あいまい検索を行う。
-  // 条件に合致するブックマークが存在しない場合は `NOT_FOUND` を返却する。
-  rpc FindBookmarks(Bookmark) returns (stream Bookmark);
-
-  // ブックマークを一覧表示する。
-  rpc ListBookmarks(ListBookmarksRequest) returns (ListBookmarksResponse);
-
-  // 既存のブックマークを更新する。
-  // 指定したIDのブックマークが存在しない場合は `NOT_FOUND` を返却する。
-  rpc UpdateBookmark(UpdateBookmarkRequest) returns (Bookmark);
-
-  // 既存のブックマークにタグをつける。
-  // 指定したIDのブックマークが存在しない場合は `NOT_FOUND` を返却する。
-  // 重複するタグを指定した場合は `ALREADY_EXISTS` を返却する。
-  rpc TagBookmark(TagBookmarkRequest) returns (Bookmark);
-
-  // 既存のブックマークからタグを外す。
-  // 指定したIDのブックマークが存在しない場合は `NOT_FOUND` を返却する。
-  // 存在しないタグを指定した場合は `INVALID_ARGUMENT` を返却する。
-  rpc UntagBookmark(UntagBookmarkRequest) returns (Bookmark);
-
-  // 既存のブックマークを削除する。
-  // 指定したIDのブックマークが存在しない場合は `NOT_FOUND` を返却する。
-  rpc DeleteBookmark(DeleteBookmarkRequest) returns (google.protobuf.Empty);
-}
-
-// ブックマーク。
+// ブックマークを表すメッセージ。
 message Bookmark {
-  // ブックマークを識別するためのID。
-  // MongoDB の `ObjectId` を指定する。
-  // 文字列長は12バイト(24文字)。
-  // 使用可能文字は `[0-9a-f]` の16文字。
+  // ブックマークIDを表すフィールド。
   string bookmark_id = 1;
 
-  // ブックマークのURI。
-  // 参考 [Uniform Resource Identifier (URI): Generic Syntax]
-  // (https://datatracker.ietf.org/doc/html/rfc3986)
-  string uri = 2;
+  // ブックマーク名を表すフィールド。
+  string bookmark_name = 2;
 
-  // ブックマークのタイトル。
-  string title = 3;
+  // URIを表すフィールド。
+  string uri = 3;
 
-  // ブックマークにつけられたタグ一覧。
-  // タグはブックマーク内で一意であることが保証される。
+  // タグ一覧を表すフィールド。
   repeated Tag tags = 4;
 }
 
-// タグ。
+// タグを表すメッセージ。
 message Tag {
-  // タグの名前。必須項目。
-  string name = 1;
+  // タグ名を表すフィールド。
+  //
+  // 必須項目。
+  // 空白は不正とする。
+  string tag_name = 1;
 }
 
-// `ListBookmarks` 用のリクエスト(フィールドを持たない)。
-// ユーザ機能を実装する場合にフィールドを追加する。
-message ListBookmarksRequest {}
+// CreateBookmark 用のリクエストメッセージ。
+message CreateBookmarkRequest {
+  // ブックマーク名を表すフィールド。
+  //
+  // 必須項目。
+  // 空白は不正とする。
+  string bookmark_name = 1;
 
-// `ListBookmarks` 用のレスポンス。
-message ListBookmarksResponse {
-  // ブックマーク一覧。
-  repeated Bookmark bookmarks = 1;
-}
-
-// `UpdateBookmark` 用のリクエスト。
-message UpdateBookmarkRequest {
-  // ブックマークを識別するためのID。必須項目。
-  string bookmark_id = 1;
-
-  // ブックマークのURI。
-  // 空の場合は更新の対象外となる。
+  // URIを表すフィールド。
+  //
+  // 必須項目。
+  // 空白は不正とする。
   string uri = 2;
 
-  // ブックマークのタイトル。
-  // 空の場合は更新の対象外となる。
-  string title = 3;
+  // タグ一覧を表すフィールド。
+  repeated Tag tags = 4;
 }
 
-// `TagBookmark` 用のリクエスト。
-message TagBookmarkRequest {
-  // ブックマークを識別するためのID。必須項目。
-  string bookmark_id = 1;
-
-  // ブックマークにつけるタグ。必須項目。
-  Tag tag = 2;
-}
-
-// `UntagBookmark` 用のリクエスト。
-message UntagBookmarkRequest {
-  // ブックマークを識別するためのID。必須項目。
-  string bookmark_id = 1;
-
-  // ブックマークから外すタグ。必須項目。
-  Tag tag = 2;
-}
-
-// `DeleteBookmark` 用のリクエスト。
-message DeleteBookmarkRequest {
-  // ブックマークを識別するためのID。必須項目。
-  string bookmark_id = 1;
+// ブックマークを管理するサービス。
+service Bookmarker {
+  // ブックマークを作成する。
+  //
+  // 作成に成功した場合は OK を返却する。
+  // 無効な引数を指定した場合は INVALID_ARGUMENT を返却する。
+  // サーバエラーが発生した場合は INTERNAL を返却する。
+  rpc CreateBookmark(CreateBookmarkRequest) returns (google.protobuf.Empty);
 }

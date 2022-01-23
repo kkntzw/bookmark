@@ -1,0 +1,22 @@
+level: "debug"
+development: true
+disableCaller: false
+disableStacktrace: false
+encoding: "console"
+encoderConfig:
+  messageKey: "Message"
+  levelKey: "Level"
+  timeKey: "Time"
+  nameKey: "Name"
+  callerKey: "Caller"
+  stacktraceKey: "Stacktrace"
+  levelEncoder: "capital"
+  timeEncoder: "ISO8601"
+  durationEncoder: "string"
+  callerEncoder: "short"
+outputPaths:
+  - "stdout"
+  - "bookmark.log"
+errorOutputPaths:
+  - "stderr"
+  - "bookmark.log"

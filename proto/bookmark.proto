@@ -1,0 +1,59 @@
+syntax = "proto3";
+
+package bookmark;
+
+import "google/protobuf/empty.proto";
+
+option go_package = "./pb";
+
+// ブックマークを表すメッセージ。
+message Bookmark {
+  // ブックマークIDを表すフィールド。
+  string bookmark_id = 1;
+
+  // ブックマーク名を表すフィールド。
+  string bookmark_name = 2;
+
+  // URIを表すフィールド。
+  string uri = 3;
+
+  // タグ一覧を表すフィールド。
+  repeated Tag tags = 4;
+}
+
+// タグを表すメッセージ。
+message Tag {
+  // タグ名を表すフィールド。
+  //
+  // 必須項目。
+  // 空白は不正とする。
+  string tag_name = 1;
+}
+
+// CreateBookmark 用のリクエストメッセージ。
+message CreateBookmarkRequest {
+  // ブックマーク名を表すフィールド。
+  //
+  // 必須項目。
+  // 空白は不正とする。
+  string bookmark_name = 1;
+
+  // URIを表すフィールド。
+  //
+  // 必須項目。
+  // 空白は不正とする。
+  string uri = 2;
+
+  // タグ一覧を表すフィールド。
+  repeated Tag tags = 4;
+}
+
+// ブックマークを管理するサービス。
+service Bookmarker {
+  // ブックマークを作成する。
+  //
+  // 作成に成功した場合は OK を返却する。
+  // 無効な引数を指定した場合は INVALID_ARGUMENT を返却する。
+  // サーバエラーが発生した場合は INTERNAL を返却する。
+  rpc CreateBookmark(CreateBookmarkRequest) returns (google.protobuf.Empty);
+}

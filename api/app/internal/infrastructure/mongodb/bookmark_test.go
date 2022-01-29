@@ -6,6 +6,7 @@ import (
 	"github.com/kkntzw/bookmark/internal/domain/entity"
 	"github.com/kkntzw/bookmark/internal/domain/repository"
 	sample_entity "github.com/kkntzw/bookmark/test/data/domain/entity"
+	sample_mongodb "github.com/kkntzw/bookmark/test/data/infrastructure/mongodb"
 	"github.com/stretchr/testify/assert"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -116,24 +117,9 @@ func TestFindAll_ブックマークが存在する場合はentity_Bookmark型の
 		// given
 		collection := mt.Coll
 		responses := []primitive.D{
-			mtest.CreateCursorResponse(1, "foo.bar", mtest.FirstBatch, bson.D{
-				{Key: "_id", Value: "f8ddce3a-0e87-4f3b-9f5d-148ba3125e42"},
-				{Key: "name", Value: "example A"},
-				{Key: "uri", Value: "https://example.com/foo"},
-				{Key: "tags", Value: bson.A{}},
-			}),
-			mtest.CreateCursorResponse(1, "foo.bar", mtest.NextBatch, bson.D{
-				{Key: "_id", Value: "7a5c72ca-6e7d-4592-abb7-363ecac0d847"},
-				{Key: "name", Value: "example B"},
-				{Key: "uri", Value: "https://example.com/bar"},
-				{Key: "tags", Value: bson.A{"B-1"}},
-			}),
-			mtest.CreateCursorResponse(1, "foo.bar", mtest.NextBatch, bson.D{
-				{Key: "_id", Value: "14bce21c-c9f1-43d2-a399-3e42954400f2"},
-				{Key: "name", Value: "example C"},
-				{Key: "uri", Value: "https://example.com/baz"},
-				{Key: "tags", Value: bson.A{"C-1", "C-2"}},
-			}),
+			mtest.CreateCursorResponse(1, "foo.bar", mtest.FirstBatch, sample_mongodb.BookmarkA()),
+			mtest.CreateCursorResponse(1, "foo.bar", mtest.NextBatch, sample_mongodb.BookmarkB()),
+			mtest.CreateCursorResponse(1, "foo.bar", mtest.NextBatch, sample_mongodb.BookmarkC()),
 			mtest.CreateCursorResponse(0, "foo.bar", mtest.NextBatch),
 		}
 		mt.AddMockResponses(responses...)
@@ -208,13 +194,8 @@ func TestFindByID_該当するブックマークが存在する場合はentity_B
 	mt.Run("success", func(mt *mtest.T) {
 		// given
 		collection := mt.Coll
-		batch := bson.D{
-			{Key: "_id", Value: "f81d4fae-7dec-11d0-a765-00a0c91e6bf6"},
-			{Key: "name", Value: "example"},
-			{Key: "uri", Value: "https://example.com"},
-			{Key: "tags", Value: bson.A{"1", "2", "3"}},
-		}
-		mt.AddMockResponses(mtest.CreateCursorResponse(1, "foo.bar", mtest.FirstBatch, batch))
+		response := mtest.CreateCursorResponse(1, "foo.bar", mtest.FirstBatch, sample_mongodb.Bookmark())
+		mt.AddMockResponses(response)
 		repository := NewBookmarkRepository(collection)
 		id := sample_entity.BookmarkID()
 		// when
@@ -232,8 +213,8 @@ func TestFindByID_該当するブックマークが存在しない場合はnil�
 	mt.Run("success", func(mt *mtest.T) {
 		// given
 		collection := mt.Coll
-		batch := bson.D{}
-		mt.AddMockResponses(mtest.CreateCursorResponse(1, "foo.bar", mtest.FirstBatch, batch))
+		response := mtest.CreateCursorResponse(1, "foo.bar", mtest.FirstBatch, bson.D{})
+		mt.AddMockResponses(response)
 		repository := NewBookmarkRepository(collection)
 		id := sample_entity.BookmarkID()
 		// when

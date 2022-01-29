@@ -34,6 +34,21 @@ func (m *MockBookmark) EXPECT() *MockBookmarkMockRecorder {
 	return m.recorder
 }
 
+// FindAll mocks base method.
+func (m *MockBookmark) FindAll() ([]entity.Bookmark, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindAll")
+	ret0, _ := ret[0].([]entity.Bookmark)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindAll indicates an expected call of FindAll.
+func (mr *MockBookmarkMockRecorder) FindAll() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindAll", reflect.TypeOf((*MockBookmark)(nil).FindAll))
+}
+
 // FindByID mocks base method.
 func (m *MockBookmark) FindByID(id *entity.ID) (*entity.Bookmark, error) {
 	m.ctrl.T.Helper()

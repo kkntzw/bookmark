@@ -12,6 +12,11 @@ type Bookmark interface {
 	// ブックマークを保存する。
 	Save(bookmark *entity.Bookmark) error
 
+	// ブックマーク一覧を検索する。
+	//
+	// ブックマークが存在しない場合は空のスライスを返却する。
+	FindAll() ([]entity.Bookmark, error)
+
 	// IDからブックマークを検索する。
 	//
 	// 該当するブックマークが存在しない場合はnilを返却する。

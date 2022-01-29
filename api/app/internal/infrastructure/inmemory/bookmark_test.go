@@ -61,6 +61,35 @@ func TestSave_不正な値を受け取るとエラーを返却する(t *testing.
 	assert.EqualError(t, err, errString)
 }
 
+func TestFindAll_ブックマークが存在する場合はentity_Bookmark型のインスタンスが含まれたスライスを返却する(t *testing.T) {
+	// given
+	repository := NewBookmarkRepository()
+	repository.Save(sample_entity.BookmarkA())
+	repository.Save(sample_entity.BookmarkB())
+	repository.Save(sample_entity.BookmarkC())
+	// when
+	actual, err := repository.FindAll()
+	// then
+	expected := []entity.Bookmark{
+		*sample_entity.BookmarkA(),
+		*sample_entity.BookmarkB(),
+		*sample_entity.BookmarkC(),
+	}
+	assert.ElementsMatch(t, expected, actual)
+	assert.NoError(t, err)
+}
+
+func TestFindAll_ブックマークが存在しない場合は空のスライスを返却する(t *testing.T) {
+	// given
+	repository := NewBookmarkRepository()
+	// when
+	object, err := repository.FindAll()
+	// then
+	assert.NotNil(t, object)
+	assert.Empty(t, object)
+	assert.NoError(t, err)
+}
+
 func TestFindByID_該当するブックマークが存在する場合はentity_Bookmark型のインスタンスを返却する(t *testing.T) {
 	// given
 	repository := NewBookmarkRepository()

@@ -141,7 +141,7 @@ func TestRegister_ブックマーク重複確認中にエラーが発生した�
 	assert.EqualError(t, err, errString)
 }
 
-func TestRegister_ブックマーク保存中にエラーが発生した場合はエラーを返却する(t *testing.T) {
+func TestRegister_リポジトリの操作に失敗した場合はエラーを返却する(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	// given

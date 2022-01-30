@@ -37,7 +37,7 @@ func NewBookmarkUsecase(repository repository.Bookmark, service service.Bookmark
 //
 // 不正なコマンドを受け取るとエラーを返却する。
 // ブックマークが重複して存在する場合はエラーを返却する。
-// リポジトリの操作中にエラーが発生した場合はエラーを返却する。
+// リポジトリの操作に失敗した場合はエラーを返却する。
 func (u *bookmarkUsecase) Register(cmd *command.RegisterBookmark) error {
 	if cmd == nil {
 		return fmt.Errorf("argument \"cmd\" is nil")

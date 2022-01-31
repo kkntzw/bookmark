@@ -56,4 +56,10 @@ service Bookmarker {
   // 無効な引数を指定した場合は INVALID_ARGUMENT を返却する。
   // サーバエラーが発生した場合は INTERNAL を返却する。
   rpc CreateBookmark(CreateBookmarkRequest) returns (google.protobuf.Empty);
+
+  // ブックマークを一覧取得する。
+  //
+  // 一覧取得に成功した場合は OK を返却する。
+  // サーバエラーが発生した場合は INTERNAL を返却する。
+  rpc ListBookmarks(google.protobuf.Empty) returns (stream Bookmark);
 }

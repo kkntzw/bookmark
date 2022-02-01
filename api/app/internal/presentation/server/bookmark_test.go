@@ -7,8 +7,12 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/kkntzw/bookmark/internal/application/command"
+	"github.com/kkntzw/bookmark/internal/application/dto"
 	"github.com/kkntzw/bookmark/internal/presentation/pb"
+	sample_dto "github.com/kkntzw/bookmark/test/data/application/dto"
+	sample_pb "github.com/kkntzw/bookmark/test/data/presentation/pb"
 	mock_usecase "github.com/kkntzw/bookmark/test/mock/application/usecase"
+	mock_pb "github.com/kkntzw/bookmark/test/mock/presentation/pb"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -137,5 +141,82 @@ func TestCreateBookmark_ブックマーク登録中にエラーが発生した�
 	// then
 	assert.Nil(t, object)
 	expected := status.Error(codes.Internal, "server error")
+	assert.Exactly(t, expected, actual)
+}
+
+func TestListBookmarks_正当な値を受け取るとnilを返却する(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	// given
+	usecase := mock_usecase.NewMockBookmark(ctrl)
+	bookmarks := []dto.Bookmark{
+		sample_dto.BookmarkA(),
+		sample_dto.BookmarkB(),
+		sample_dto.BookmarkC(),
+	}
+	usecase.EXPECT().List().Return(bookmarks, nil)
+	server := NewBookmarkServer(usecase)
+	req := &emptypb.Empty{}
+	stream := mock_pb.NewMockBookmarker_ListBookmarksServer(ctrl)
+	stream.EXPECT().Send(sample_pb.BookmarkA()).Return(nil)
+	stream.EXPECT().Send(sample_pb.BookmarkB()).Return(nil)
+	stream.EXPECT().Send(sample_pb.BookmarkC()).Return(nil)
+	// when
+	err := server.ListBookmarks(req, stream)
+	// then
+	assert.NoError(t, err)
+}
+
+func TestListBookmarks_不正な値を受け取るとInvalidArgumentを返却する(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	// given
+	usecase := mock_usecase.NewMockBookmark(ctrl)
+	server := NewBookmarkServer(usecase)
+	req := (*emptypb.Empty)(nil)
+	stream := mock_pb.NewMockBookmarker_ListBookmarksServer(ctrl)
+	// when
+	actual := server.ListBookmarks(req, stream)
+	// then
+	expected := status.Error(codes.InvalidArgument, "argument \"req\" is nil")
+	assert.Exactly(t, expected, actual)
+}
+
+func TestListBookmarks_ブックマーク一覧取得中にエラーが発生した場合はInternalを返却する(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	// given
+	usecase := mock_usecase.NewMockBookmark(ctrl)
+	usecase.EXPECT().List().Return(nil, fmt.Errorf("some error"))
+	server := NewBookmarkServer(usecase)
+	req := &emptypb.Empty{}
+	stream := mock_pb.NewMockBookmarker_ListBookmarksServer(ctrl)
+	// when
+	actual := server.ListBookmarks(req, stream)
+	// then
+	expected := status.Error(codes.Internal, "server error")
+	assert.Exactly(t, expected, actual)
+}
+
+func TestListBookmarks_ストリーム送信中にエラーが発生した場合はInternalを返却する(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	// given
+	usecase := mock_usecase.NewMockBookmark(ctrl)
+	bookmarks := []dto.Bookmark{
+		sample_dto.BookmarkA(),
+		sample_dto.BookmarkB(),
+		sample_dto.BookmarkC(),
+	}
+	usecase.EXPECT().List().Return(bookmarks, nil)
+	server := NewBookmarkServer(usecase)
+	req := &emptypb.Empty{}
+	stream := mock_pb.NewMockBookmarker_ListBookmarksServer(ctrl)
+	stream.EXPECT().Send(sample_pb.BookmarkA()).Return(nil)
+	stream.EXPECT().Send(sample_pb.BookmarkB()).Return(fmt.Errorf("some error"))
+	// when
+	actual := server.ListBookmarks(req, stream)
+	// then
+	expected := status.Error(codes.Internal, "response failed")
 	assert.Exactly(t, expected, actual)
 }

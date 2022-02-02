@@ -9,6 +9,7 @@ import (
 
 	gomock "github.com/golang/mock/gomock"
 	command "github.com/kkntzw/bookmark/internal/application/command"
+	dto "github.com/kkntzw/bookmark/internal/application/dto"
 )
 
 // MockBookmark is a mock of Bookmark interface.
@@ -32,6 +33,21 @@ func NewMockBookmark(ctrl *gomock.Controller) *MockBookmark {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockBookmark) EXPECT() *MockBookmarkMockRecorder {
 	return m.recorder
+}
+
+// List mocks base method.
+func (m *MockBookmark) List() ([]dto.Bookmark, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "List")
+	ret0, _ := ret[0].([]dto.Bookmark)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// List indicates an expected call of List.
+func (mr *MockBookmarkMockRecorder) List() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockBookmark)(nil).List))
 }
 
 // Register mocks base method.

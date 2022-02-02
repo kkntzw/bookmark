@@ -1,7 +1,6 @@
 package inmemory
 
 import (
-	"reflect"
 	"testing"
 
 	"github.com/kkntzw/bookmark/internal/domain/entity"
@@ -51,21 +50,6 @@ func TestSave_正当な値を受け取るとnilを返却する(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestSave_引数bookmarkとフィールドstoreに保存した値は同一でないが同値となる(t *testing.T) {
-	// given
-	repository := NewBookmarkRepository()
-	bookmark := sample_entity.Bookmark()
-	repository.Save(bookmark)
-	// when
-	concrete, _ := repository.(*bookmarkRepository)
-	stored := concrete.store[bookmark.ID()]
-	same := bookmark == &stored
-	equiv := reflect.DeepEqual(*bookmark, stored)
-	// then
-	assert.False(t, same)
-	assert.True(t, equiv)
-}
-
 func TestSave_不正な値を受け取るとエラーを返却する(t *testing.T) {
 	// given
 	repository := NewBookmarkRepository()
@@ -75,6 +59,35 @@ func TestSave_不正な値を受け取るとエラーを返却する(t *testing.
 	// then
 	errString := "argument \"bookmark\" is nil"
 	assert.EqualError(t, err, errString)
+}
+
+func TestFindAll_ブックマークが存在する場合はentity_Bookmark型のインスタンスが含まれたスライスを返却する(t *testing.T) {
+	// given
+	repository := NewBookmarkRepository()
+	repository.Save(sample_entity.BookmarkA())
+	repository.Save(sample_entity.BookmarkB())
+	repository.Save(sample_entity.BookmarkC())
+	// when
+	actual, err := repository.FindAll()
+	// then
+	expected := []entity.Bookmark{
+		*sample_entity.BookmarkA(),
+		*sample_entity.BookmarkB(),
+		*sample_entity.BookmarkC(),
+	}
+	assert.ElementsMatch(t, expected, actual)
+	assert.NoError(t, err)
+}
+
+func TestFindAll_ブックマークが存在しない場合は空のスライスを返却する(t *testing.T) {
+	// given
+	repository := NewBookmarkRepository()
+	// when
+	object, err := repository.FindAll()
+	// then
+	assert.NotNil(t, object)
+	assert.Empty(t, object)
+	assert.NoError(t, err)
 }
 
 func TestFindByID_該当するブックマークが存在する場合はentity_Bookmark型のインスタンスを返却する(t *testing.T) {
@@ -88,22 +101,6 @@ func TestFindByID_該当するブックマークが存在する場合はentity_B
 	expected := sample_entity.Bookmark()
 	assert.Exactly(t, expected, actual)
 	assert.NoError(t, err)
-}
-
-func TestFindByID_戻り値bookmarkとフィールドstoreに保存した値は同一でないが同値となる(t *testing.T) {
-	// given
-	repository := NewBookmarkRepository()
-	repository.Save(sample_entity.Bookmark())
-	id := sample_entity.BookmarkID()
-	bookmark, _ := repository.FindByID(id)
-	// when
-	concrete, _ := repository.(*bookmarkRepository)
-	stored := concrete.store[bookmark.ID()]
-	same := bookmark == &stored
-	equiv := reflect.DeepEqual(*bookmark, stored)
-	// then
-	assert.False(t, same)
-	assert.True(t, equiv)
 }
 
 func TestFindByID_該当するブックマークが存在しない場合はnilを返却する(t *testing.T) {

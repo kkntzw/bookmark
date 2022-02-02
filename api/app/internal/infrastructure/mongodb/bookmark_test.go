@@ -6,8 +6,10 @@ import (
 	"github.com/kkntzw/bookmark/internal/domain/entity"
 	"github.com/kkntzw/bookmark/internal/domain/repository"
 	sample_entity "github.com/kkntzw/bookmark/test/data/domain/entity"
+	sample_mongodb "github.com/kkntzw/bookmark/test/data/infrastructure/mongodb"
 	"github.com/stretchr/testify/assert"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/integration/mtest"
 )
@@ -108,19 +110,92 @@ func TestSave_ブックマークドキュメントの保存に失敗した場合
 	})
 }
 
+func TestFindAll_ブックマークが存在する場合はentity_Bookmark型のインスタンスが含まれたスライスを返却する(t *testing.T) {
+	mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock))
+	defer mt.Close()
+	mt.Run("success", func(mt *mtest.T) {
+		// given
+		collection := mt.Coll
+		responses := []primitive.D{
+			mtest.CreateCursorResponse(1, "foo.bar", mtest.FirstBatch, sample_mongodb.BookmarkA()),
+			mtest.CreateCursorResponse(1, "foo.bar", mtest.NextBatch, sample_mongodb.BookmarkB()),
+			mtest.CreateCursorResponse(1, "foo.bar", mtest.NextBatch, sample_mongodb.BookmarkC()),
+			mtest.CreateCursorResponse(0, "foo.bar", mtest.NextBatch),
+		}
+		mt.AddMockResponses(responses...)
+		repository := NewBookmarkRepository(collection)
+		// when
+		actual, err := repository.FindAll()
+		// then
+		expected := []entity.Bookmark{
+			*sample_entity.BookmarkA(),
+			*sample_entity.BookmarkB(),
+			*sample_entity.BookmarkC(),
+		}
+		assert.ElementsMatch(t, expected, actual)
+		assert.NoError(t, err)
+	})
+}
+
+func TestFindAll_ブックマークが存在しない場合は空のスライスを返却する(t *testing.T) {
+	mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock))
+	defer mt.Close()
+	mt.Run("success", func(mt *mtest.T) {
+		// given
+		collection := mt.Coll
+		mt.AddMockResponses(mtest.CreateCursorResponse(0, "foo.bar", mtest.FirstBatch))
+		repository := NewBookmarkRepository(collection)
+		// when
+		object, err := repository.FindAll()
+		// then
+		assert.NotNil(t, object)
+		assert.Empty(t, object)
+		assert.NoError(t, err)
+	})
+}
+
+func TestFindAll_ブックマークドキュメントの検索に失敗した場合はエラーを返却する(t *testing.T) {
+	mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock))
+	defer mt.Close()
+	mt.Run("success", func(mt *mtest.T) {
+		// given
+		collection := mt.Coll
+		mt.AddMockResponses(bson.D{{Key: "ok", Value: 0}})
+		repository := NewBookmarkRepository(collection)
+		// when
+		object, err := repository.FindAll()
+		// then
+		assert.Nil(t, object)
+		errString := "failed at collection.Find: command failed"
+		assert.EqualError(t, err, errString)
+	})
+}
+
+func TestFindAll_ブックマークドキュメントのデコードに失敗した場合はエラーを返却する(t *testing.T) {
+	mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock))
+	defer mt.Close()
+	mt.Run("success", func(mt *mtest.T) {
+		// given
+		collection := mt.Coll
+		mt.AddMockResponses(mtest.CreateCursorResponse(1, "foo.bar", mtest.FirstBatch, bson.D{}))
+		repository := NewBookmarkRepository(collection)
+		// when
+		object, err := repository.FindAll()
+		// then
+		assert.Nil(t, object)
+		errString := "failed at cursor.All: no responses remaining"
+		assert.EqualError(t, err, errString)
+	})
+}
+
 func TestFindByID_該当するブックマークが存在する場合はentity_Bookmark型のインスタンスを返却する(t *testing.T) {
 	mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock))
 	defer mt.Close()
 	mt.Run("success", func(mt *mtest.T) {
 		// given
 		collection := mt.Coll
-		batch := bson.D{
-			{Key: "_id", Value: "f81d4fae-7dec-11d0-a765-00a0c91e6bf6"},
-			{Key: "name", Value: "example"},
-			{Key: "uri", Value: "https://example.com"},
-			{Key: "tags", Value: bson.A{"1", "2", "3"}},
-		}
-		mt.AddMockResponses(mtest.CreateCursorResponse(1, "foo.bar", mtest.FirstBatch, batch))
+		response := mtest.CreateCursorResponse(1, "foo.bar", mtest.FirstBatch, sample_mongodb.Bookmark())
+		mt.AddMockResponses(response)
 		repository := NewBookmarkRepository(collection)
 		id := sample_entity.BookmarkID()
 		// when
@@ -138,8 +213,8 @@ func TestFindByID_該当するブックマークが存在しない場合はnil�
 	mt.Run("success", func(mt *mtest.T) {
 		// given
 		collection := mt.Coll
-		batch := bson.D{}
-		mt.AddMockResponses(mtest.CreateCursorResponse(1, "foo.bar", mtest.FirstBatch, batch))
+		response := mtest.CreateCursorResponse(1, "foo.bar", mtest.FirstBatch, bson.D{})
+		mt.AddMockResponses(response)
 		repository := NewBookmarkRepository(collection)
 		id := sample_entity.BookmarkID()
 		// when

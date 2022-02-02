@@ -80,6 +80,40 @@ func (r *bookmarkRepository) Save(bookmark *entity.Bookmark) error {
 	return nil
 }
 
+// ブックマーク一覧を検索する。
+//
+// ブックマークが存在しない場合は空のスライスを返却する。
+// ドキュメントの検索に失敗した場合はエラーを返却する。
+// ドキュメントのデコードに失敗した場合はエラーを返却する。
+//
+//	db.bookmarks.find({})
+func (r *bookmarkRepository) FindAll() ([]entity.Bookmark, error) {
+	ctx := context.Background()
+	filter := bson.D{}
+	cursor, err := r.collection.Find(ctx, filter)
+	if err != nil {
+		return nil, fmt.Errorf("failed at collection.Find: %w", err)
+	}
+	var documents []BookmarkDocument
+	if err := cursor.All(ctx, &documents); err != nil {
+		return nil, fmt.Errorf("failed at cursor.All: %w", err)
+	}
+	bookmarks := make([]entity.Bookmark, len(documents))
+	for i, document := range documents {
+		id, _ := entity.NewID(document.ID)
+		name, _ := entity.NewName(document.Name)
+		uri, _ := entity.NewURI(document.URI)
+		tags := make([]entity.Tag, len(document.Tags))
+		for i, v := range document.Tags {
+			tag,  _ := entity.NewTag(v)
+			tags[i] = *tag
+		}
+		bookmark, _ := entity.NewBookmark(id, name, uri, tags)
+		bookmarks[i] = *bookmark
+	}
+	return bookmarks, nil
+}
+
 // IDからブックマークを検索する。
 //
 // 該当するブックマークが存在する場合はインスタンスを返却する。

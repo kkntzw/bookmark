@@ -29,6 +29,11 @@ type BookmarkerClient interface {
 	// 無効な引数を指定した場合は INVALID_ARGUMENT を返却する。
 	// サーバエラーが発生した場合は INTERNAL を返却する。
 	CreateBookmark(ctx context.Context, in *CreateBookmarkRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	// ブックマークを一覧取得する。
+	//
+	// 一覧取得に成功した場合は OK を返却する。
+	// サーバエラーが発生した場合は INTERNAL を返却する。
+	ListBookmarks(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (Bookmarker_ListBookmarksClient, error)
 }
 
 type bookmarkerClient struct {
@@ -48,6 +53,38 @@ func (c *bookmarkerClient) CreateBookmark(ctx context.Context, in *CreateBookmar
 	return out, nil
 }
 
+func (c *bookmarkerClient) ListBookmarks(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (Bookmarker_ListBookmarksClient, error) {
+	stream, err := c.cc.NewStream(ctx, &Bookmarker_ServiceDesc.Streams[0], "/bookmark.Bookmarker/ListBookmarks", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &bookmarkerListBookmarksClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type Bookmarker_ListBookmarksClient interface {
+	Recv() (*Bookmark, error)
+	grpc.ClientStream
+}
+
+type bookmarkerListBookmarksClient struct {
+	grpc.ClientStream
+}
+
+func (x *bookmarkerListBookmarksClient) Recv() (*Bookmark, error) {
+	m := new(Bookmark)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // BookmarkerServer is the server API for Bookmarker service.
 // All implementations must embed UnimplementedBookmarkerServer
 // for forward compatibility
@@ -58,6 +95,11 @@ type BookmarkerServer interface {
 	// 無効な引数を指定した場合は INVALID_ARGUMENT を返却する。
 	// サーバエラーが発生した場合は INTERNAL を返却する。
 	CreateBookmark(context.Context, *CreateBookmarkRequest) (*emptypb.Empty, error)
+	// ブックマークを一覧取得する。
+	//
+	// 一覧取得に成功した場合は OK を返却する。
+	// サーバエラーが発生した場合は INTERNAL を返却する。
+	ListBookmarks(*emptypb.Empty, Bookmarker_ListBookmarksServer) error
 	mustEmbedUnimplementedBookmarkerServer()
 }
 
@@ -67,6 +109,9 @@ type UnimplementedBookmarkerServer struct {
 
 func (UnimplementedBookmarkerServer) CreateBookmark(context.Context, *CreateBookmarkRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateBookmark not implemented")
+}
+func (UnimplementedBookmarkerServer) ListBookmarks(*emptypb.Empty, Bookmarker_ListBookmarksServer) error {
+	return status.Errorf(codes.Unimplemented, "method ListBookmarks not implemented")
 }
 func (UnimplementedBookmarkerServer) mustEmbedUnimplementedBookmarkerServer() {}
 
@@ -99,6 +144,27 @@ func _Bookmarker_CreateBookmark_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Bookmarker_ListBookmarks_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(emptypb.Empty)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(BookmarkerServer).ListBookmarks(m, &bookmarkerListBookmarksServer{stream})
+}
+
+type Bookmarker_ListBookmarksServer interface {
+	Send(*Bookmark) error
+	grpc.ServerStream
+}
+
+type bookmarkerListBookmarksServer struct {
+	grpc.ServerStream
+}
+
+func (x *bookmarkerListBookmarksServer) Send(m *Bookmark) error {
+	return x.ServerStream.SendMsg(m)
+}
+
 // Bookmarker_ServiceDesc is the grpc.ServiceDesc for Bookmarker service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -111,6 +177,12 @@ var Bookmarker_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Bookmarker_CreateBookmark_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "ListBookmarks",
+			Handler:       _Bookmarker_ListBookmarks_Handler,
+			ServerStreams: true,
+		},
+	},
 	Metadata: "bookmark.proto",
 }

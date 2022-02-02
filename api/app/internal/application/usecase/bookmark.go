@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/kkntzw/bookmark/internal/application/command"
+	"github.com/kkntzw/bookmark/internal/application/dto"
 	"github.com/kkntzw/bookmark/internal/domain/entity"
 	"github.com/kkntzw/bookmark/internal/domain/repository"
 	"github.com/kkntzw/bookmark/internal/domain/service"
@@ -13,6 +14,9 @@ import (
 type Bookmark interface {
 	// ブックマークを登録する。
 	Register(*command.RegisterBookmark) error
+
+	// ブックマークを一覧取得する。
+	List() ([]dto.Bookmark, error)
 }
 
 // ブックマークに関するユースケースの具象型。
@@ -33,7 +37,7 @@ func NewBookmarkUsecase(repository repository.Bookmark, service service.Bookmark
 //
 // 不正なコマンドを受け取るとエラーを返却する。
 // ブックマークが重複して存在する場合はエラーを返却する。
-// リポジトリの操作中にエラーが発生した場合はエラーを返却する。
+// リポジトリの操作に失敗した場合はエラーを返却する。
 func (u *bookmarkUsecase) Register(cmd *command.RegisterBookmark) error {
 	if cmd == nil {
 		return fmt.Errorf("argument \"cmd\" is nil")
@@ -61,4 +65,19 @@ func (u *bookmarkUsecase) Register(cmd *command.RegisterBookmark) error {
 		return fmt.Errorf("failed at repository.Save: %w", err)
 	}
 	return nil
+}
+
+// ブックマークを一覧取得する。
+//
+// リポジトリの操作に失敗した場合はエラーを返却する。
+func (u *bookmarkUsecase) List() ([]dto.Bookmark, error) {
+	entities, err := u.repository.FindAll()
+	if err != nil {
+		return nil, fmt.Errorf("failed at repository.FindAll: %w", err)
+	}
+	bookmarks := make([]dto.Bookmark, len(entities))
+	for i, entity := range entities {
+		bookmarks[i] = dto.NewBookmark(entity)
+	}
+	return bookmarks, nil
 }

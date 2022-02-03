@@ -45,8 +45,3 @@ func NewTag(v string) (*Tag, error) {
 func (tag *Tag) Value() string {
 	return tag.value
 }
-
-// インスタンスを複製する。
-func (tag Tag) Copy() *Tag {
-	return &tag
-}

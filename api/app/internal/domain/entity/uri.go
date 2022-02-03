@@ -52,8 +52,3 @@ func (uri *URI) Value() url.URL {
 func (uri *URI) String() string {
 	return uri.value.String()
 }
-
-// インスタンスを複製する。
-func (uri URI) Copy() *URI {
-	return &uri
-}

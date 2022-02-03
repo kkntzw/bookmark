@@ -83,13 +83,3 @@ func TestValue_Name型から値を取得する(t *testing.T) {
 	expected := "example"
 	assert.Exactly(t, expected, actual)
 }
-
-func TestCopy_同じ値で異なるポインタを持つName型のインスタンスを返却する(t *testing.T) {
-	// given
-	name, _ := NewName("example")
-	// when
-	copy := name.Copy()
-	// then
-	assert.Exactly(t, name, copy)
-	assert.NotSame(t, name, copy)
-}

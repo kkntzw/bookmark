@@ -171,6 +171,30 @@ func TestRename_不正な値を受け取るとフィールドnameを変更せず
 	assert.EqualError(t, err, errString)
 }
 
+func TestRewriteURI_正当な値を受け取るとフィールドuriを変更してnilを返却する(t *testing.T) {
+	// given
+	bookmark, _ := NewBookmark(args())
+	uri, _ := NewURI("http://example.com")
+	// when
+	err := bookmark.RewriteURI(uri)
+	// then
+	expected := *uri
+	actual := bookmark.URI()
+	assert.Exactly(t, expected, actual)
+	assert.NoError(t, err)
+}
+
+func TestRename_不正な値を受け取るとフィールドuriを変更せずエラーを返却する(t *testing.T) {
+	// given
+	bookmark, _ := NewBookmark(args())
+	uri := (*URI)(nil)
+	// when
+	err := bookmark.RewriteURI(uri)
+	// then
+	errString := "argument \"uri\" is nil"
+	assert.EqualError(t, err, errString)
+}
+
 func TestDeepCopy_同じ値で異なるポインタを持つBookmark型のインスタンスを返却する(t *testing.T) {
 	// given
 	bookmark, _ := NewBookmark(args())

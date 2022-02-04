@@ -64,6 +64,17 @@ func (b *Bookmark) Rename(name *Name) error {
 	return nil
 }
 
+// URIを書き換える。
+//
+// nilを指定した場合はエラーを返却する。
+func (b *Bookmark) RewriteURI(uri *URI) error {
+	if uri == nil {
+		return fmt.Errorf("argument \"uri\" is nil")
+	}
+	b.uri = *uri
+	return nil
+}
+
 // インスタンスをディープコピーする。
 func (b Bookmark) DeepCopy() *Bookmark {
 	copy := &b

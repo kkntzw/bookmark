@@ -147,6 +147,30 @@ func TestTags_戻り値とフィールドtagsは同一でないが同値とな�
 	assert.True(t, equiv)
 }
 
+func TestRename_正当な値を受け取るとフィールドnameを変更してnilを返却する(t *testing.T) {
+	// given
+	bookmark, _ := NewBookmark(args())
+	name, _ := NewName("EXAMPLE")
+	// when
+	err := bookmark.Rename(name)
+	// then
+	expected := *name
+	actual := bookmark.Name()
+	assert.Exactly(t, expected, actual)
+	assert.NoError(t, err)
+}
+
+func TestRename_不正な値を受け取るとフィールドnameを変更せずエラーを返却する(t *testing.T) {
+	// given
+	bookmark, _ := NewBookmark(args())
+	name := (*Name)(nil)
+	// when
+	err := bookmark.Rename(name)
+	// then
+	errString := "argument \"name\" is nil"
+	assert.EqualError(t, err, errString)
+}
+
 func TestDeepCopy_同じ値で異なるポインタを持つBookmark型のインスタンスを返却する(t *testing.T) {
 	// given
 	bookmark, _ := NewBookmark(args())

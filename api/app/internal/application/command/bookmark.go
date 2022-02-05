@@ -37,3 +37,30 @@ func (cmd *RegisterBookmark) Validate() error {
 	}
 	return nil
 }
+
+// ブックマーク更新用のコマンド。
+type UpdateBookmark struct {
+	ID   string // ID
+	Name string // ブックマーク名
+	URI  string // URI
+}
+
+// コマンドの妥当性を検証する。
+//
+// コマンドが不正な場合は InvalidCommandError を返却する。
+func (cmd *UpdateBookmark) Validate() error {
+	args := map[string]error{}
+	if _, err := entity.NewID(cmd.ID); err != nil {
+		args["ID"] = err
+	}
+	if _, err := entity.NewName(cmd.Name); err != nil {
+		args["Name"] = err
+	}
+	if _, err := entity.NewURI(cmd.URI); err != nil {
+		args["URI"] = err
+	}
+	if len(args) > 0 {
+		return &InvalidCommandError{Args: args}
+	}
+	return nil
+}

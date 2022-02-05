@@ -15,19 +15,15 @@ type RegisterBookmark struct {
 //
 // コマンドが不正な場合は InvalidCommandError を返却する。
 func (cmd *RegisterBookmark) Validate() error {
-	var err error
 	args := map[string]error{}
-	_, err = entity.NewName(cmd.Name)
-	if err != nil {
+	if _, err := entity.NewName(cmd.Name); err != nil {
 		args["Name"] = err
 	}
-	_, err = entity.NewURI(cmd.URI)
-	if err != nil {
+	if _, err := entity.NewURI(cmd.URI); err != nil {
 		args["URI"] = err
 	}
 	for _, v := range cmd.Tags {
-		_, err = entity.NewTag(v)
-		if err != nil {
+		if _, err := entity.NewTag(v); err != nil {
 			args["Tags"] = err
 			break
 		}

@@ -17,6 +17,9 @@ type Bookmark interface {
 
 	// ブックマークを一覧取得する。
 	List() ([]dto.Bookmark, error)
+
+	// ブックマークを更新する。
+	Update(*command.UpdateBookmark) error
 }
 
 // ブックマークに関するユースケースの具象型。
@@ -80,4 +83,35 @@ func (u *bookmarkUsecase) List() ([]dto.Bookmark, error) {
 		bookmarks[i] = dto.NewBookmark(entity)
 	}
 	return bookmarks, nil
+}
+
+// ブックマークを更新する。
+//
+// 不正なコマンドを受け取るとエラーを返却する。
+// ブックマークの検索に失敗した場合はエラーを返却する。
+// ブックマークが存在しない場合はエラーを返却する。
+// ブックマークの保存に失敗した場合はエラーを返却する。
+func (u *bookmarkUsecase) Update(cmd *command.UpdateBookmark) error {
+	if cmd == nil {
+		return fmt.Errorf("argument \"cmd\" is nil")
+	}
+	if err := cmd.Validate(); err != nil {
+		return err
+	}
+	id, _ := entity.NewID(cmd.ID)
+	bookmark, err := u.repository.FindByID(id)
+	if err != nil {
+		return fmt.Errorf("failed at repository.FindByID: %w", err)
+	}
+	if bookmark == nil {
+		return fmt.Errorf("bookmark does not exist")
+	}
+	name, _ := entity.NewName(cmd.Name)
+	bookmark.Rename(name)
+	uri, _ := entity.NewURI(cmd.URI)
+	bookmark.RewriteURI(uri)
+	if err := u.repository.Save(bookmark); err != nil {
+		return fmt.Errorf("failed at repository.Save: some error")
+	}
+	return nil
 }

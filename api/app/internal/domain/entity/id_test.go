@@ -84,13 +84,3 @@ func TestValue_ID型から値を取得する(t *testing.T) {
 	expected := "f81d4fae-7dec-11d0-a765-00a0c91e6bf6"
 	assert.Exactly(t, expected, actual)
 }
-
-func TestCopy_同じ値で異なるポインタを持つID型のインスタンスを返却する(t *testing.T) {
-	// given
-	id, _ := NewID("f81d4fae-7dec-11d0-a765-00a0c91e6bf6")
-	// when
-	copy := id.Copy()
-	// then
-	assert.Exactly(t, id, copy)
-	assert.NotSame(t, id, copy)
-}

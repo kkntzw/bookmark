@@ -53,6 +53,28 @@ func (b *Bookmark) Tags() []Tag {
 	return append([]Tag{}, b.tags...)
 }
 
+// ブックマーク名を変更する。
+//
+// nilを指定した場合はエラーを返却する。
+func (b *Bookmark) Rename(name *Name) error {
+	if name == nil {
+		return fmt.Errorf("argument \"name\" is nil")
+	}
+	b.name = *name
+	return nil
+}
+
+// URIを書き換える。
+//
+// nilを指定した場合はエラーを返却する。
+func (b *Bookmark) RewriteURI(uri *URI) error {
+	if uri == nil {
+		return fmt.Errorf("argument \"uri\" is nil")
+	}
+	b.uri = *uri
+	return nil
+}
+
 // インスタンスをディープコピーする。
 func (b Bookmark) DeepCopy() *Bookmark {
 	copy := &b

@@ -105,13 +105,3 @@ func TestString_URI型からstring型の値を取得する(t *testing.T) {
 	expected := "https://example.com"
 	assert.Exactly(t, expected, actual)
 }
-
-func TestCopy_同じ値で異なるポインタを持つURI型のインスタンスを返却する(t *testing.T) {
-	// given
-	uri, _ := NewURI("https://example.com")
-	// when
-	copy := uri.Copy()
-	// then
-	assert.Exactly(t, uri, copy)
-	assert.NotSame(t, uri, copy)
-}

@@ -41,8 +41,3 @@ func NewID(v string) (*ID, error) {
 func (id *ID) Value() string {
 	return id.value
 }
-
-// インスタンスを複製する。
-func (id ID) Copy() *ID {
-	return &id
-}

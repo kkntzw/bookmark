@@ -83,13 +83,3 @@ func TestValue_Tag型から値を取得する(t *testing.T) {
 	expected := "example"
 	assert.Exactly(t, expected, actual)
 }
-
-func TestCopy_同じ値で異なるポインタを持つTag型のインスタンスを返却する(t *testing.T) {
-	// given
-	tag, _ := NewTag("example")
-	// when
-	copy := tag.Copy()
-	// then
-	assert.Exactly(t, tag, copy)
-	assert.NotSame(t, tag, copy)
-}

@@ -78,6 +78,26 @@ func (mr *MockBookmarkerClientMockRecorder) ListBookmarks(ctx, in interface{}, o
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListBookmarks", reflect.TypeOf((*MockBookmarkerClient)(nil).ListBookmarks), varargs...)
 }
 
+// UpdateBookmark mocks base method.
+func (m *MockBookmarkerClient) UpdateBookmark(ctx context.Context, in *pb.UpdateBookmarkRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "UpdateBookmark", varargs...)
+	ret0, _ := ret[0].(*emptypb.Empty)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateBookmark indicates an expected call of UpdateBookmark.
+func (mr *MockBookmarkerClientMockRecorder) UpdateBookmark(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateBookmark", reflect.TypeOf((*MockBookmarkerClient)(nil).UpdateBookmark), varargs...)
+}
+
 // MockBookmarker_ListBookmarksClient is a mock of Bookmarker_ListBookmarksClient interface.
 type MockBookmarker_ListBookmarksClient struct {
 	ctrl     *gomock.Controller
@@ -251,6 +271,21 @@ func (m *MockBookmarkerServer) ListBookmarks(arg0 *emptypb.Empty, arg1 pb.Bookma
 func (mr *MockBookmarkerServerMockRecorder) ListBookmarks(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListBookmarks", reflect.TypeOf((*MockBookmarkerServer)(nil).ListBookmarks), arg0, arg1)
+}
+
+// UpdateBookmark mocks base method.
+func (m *MockBookmarkerServer) UpdateBookmark(arg0 context.Context, arg1 *pb.UpdateBookmarkRequest) (*emptypb.Empty, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateBookmark", arg0, arg1)
+	ret0, _ := ret[0].(*emptypb.Empty)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateBookmark indicates an expected call of UpdateBookmark.
+func (mr *MockBookmarkerServerMockRecorder) UpdateBookmark(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateBookmark", reflect.TypeOf((*MockBookmarkerServer)(nil).UpdateBookmark), arg0, arg1)
 }
 
 // mustEmbedUnimplementedBookmarkerServer mocks base method.

@@ -45,8 +45,3 @@ func NewName(v string) (*Name, error) {
 func (name *Name) Value() string {
 	return name.value
 }
-
-// インスタンスを複製する。
-func (name Name) Copy() *Name {
-	return &name
-}

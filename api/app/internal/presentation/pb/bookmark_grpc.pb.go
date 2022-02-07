@@ -34,6 +34,12 @@ type BookmarkerClient interface {
 	// 一覧取得に成功した場合は OK を返却する。
 	// サーバエラーが発生した場合は INTERNAL を返却する。
 	ListBookmarks(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (Bookmarker_ListBookmarksClient, error)
+	// ブックマークを更新する。
+	//
+	// 更新に成功した場合は OK を返却する。
+	// 無効な引数を指定した場合は INVALID_ARGUMENT を返却する。
+	// サーバエラーが発生した場合は INTERNAL を返却する。
+	UpdateBookmark(ctx context.Context, in *UpdateBookmarkRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type bookmarkerClient struct {
@@ -85,6 +91,15 @@ func (x *bookmarkerListBookmarksClient) Recv() (*Bookmark, error) {
 	return m, nil
 }
 
+func (c *bookmarkerClient) UpdateBookmark(ctx context.Context, in *UpdateBookmarkRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, "/bookmark.Bookmarker/UpdateBookmark", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // BookmarkerServer is the server API for Bookmarker service.
 // All implementations must embed UnimplementedBookmarkerServer
 // for forward compatibility
@@ -100,6 +115,12 @@ type BookmarkerServer interface {
 	// 一覧取得に成功した場合は OK を返却する。
 	// サーバエラーが発生した場合は INTERNAL を返却する。
 	ListBookmarks(*emptypb.Empty, Bookmarker_ListBookmarksServer) error
+	// ブックマークを更新する。
+	//
+	// 更新に成功した場合は OK を返却する。
+	// 無効な引数を指定した場合は INVALID_ARGUMENT を返却する。
+	// サーバエラーが発生した場合は INTERNAL を返却する。
+	UpdateBookmark(context.Context, *UpdateBookmarkRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedBookmarkerServer()
 }
 
@@ -112,6 +133,9 @@ func (UnimplementedBookmarkerServer) CreateBookmark(context.Context, *CreateBook
 }
 func (UnimplementedBookmarkerServer) ListBookmarks(*emptypb.Empty, Bookmarker_ListBookmarksServer) error {
 	return status.Errorf(codes.Unimplemented, "method ListBookmarks not implemented")
+}
+func (UnimplementedBookmarkerServer) UpdateBookmark(context.Context, *UpdateBookmarkRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateBookmark not implemented")
 }
 func (UnimplementedBookmarkerServer) mustEmbedUnimplementedBookmarkerServer() {}
 
@@ -165,6 +189,24 @@ func (x *bookmarkerListBookmarksServer) Send(m *Bookmark) error {
 	return x.ServerStream.SendMsg(m)
 }
 
+func _Bookmarker_UpdateBookmark_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateBookmarkRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BookmarkerServer).UpdateBookmark(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/bookmark.Bookmarker/UpdateBookmark",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BookmarkerServer).UpdateBookmark(ctx, req.(*UpdateBookmarkRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Bookmarker_ServiceDesc is the grpc.ServiceDesc for Bookmarker service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -175,6 +217,10 @@ var Bookmarker_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CreateBookmark",
 			Handler:    _Bookmarker_CreateBookmark_Handler,
+		},
+		{
+			MethodName: "UpdateBookmark",
+			Handler:    _Bookmarker_UpdateBookmark_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

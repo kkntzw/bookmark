@@ -220,3 +220,97 @@ func TestListBookmarks_ストリーム送信中にエラーが発生した場合
 	expected := status.Error(codes.Internal, "response failed")
 	assert.Exactly(t, expected, actual)
 }
+
+func TestUpdateBookmark_正当な値を受け取るとnilを返却する(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	// given
+	usecase := mock_usecase.NewMockBookmark(ctrl)
+	cmd := &command.UpdateBookmark{
+		ID:   "f81d4fae-7dec-11d0-a765-00a0c91e6bf6",
+		Name: "EXAMPLE",
+		URI:  "http://example.com",
+	}
+	usecase.EXPECT().Update(cmd).Return(nil)
+	server := NewBookmarkServer(usecase)
+	ctx := context.TODO()
+	req := &pb.UpdateBookmarkRequest{
+		BookmarkId:   "f81d4fae-7dec-11d0-a765-00a0c91e6bf6",
+		BookmarkName: "EXAMPLE",
+		Uri:          "http://example.com",
+	}
+	// when
+	actual, err := server.UpdateBookmark(ctx, req)
+	// then
+	expected := &emptypb.Empty{}
+	assert.Exactly(t, expected, actual)
+	assert.NoError(t, err)
+}
+
+func TestUpdateBookmark_不正な値を受け取るとInvalidArgumentを返却する(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	// given
+	usecase := mock_usecase.NewMockBookmark(ctrl)
+	server := NewBookmarkServer(usecase)
+	ctx := context.TODO()
+	req := (*pb.UpdateBookmarkRequest)(nil)
+	// when
+	object, actual := server.UpdateBookmark(ctx, req)
+	// then
+	assert.Nil(t, object)
+	expected := status.Error(codes.InvalidArgument, "argument \"req\" is nil")
+	assert.Exactly(t, expected, actual)
+}
+
+func TestUpdateBookmark_コマンドが不正な場合はInvalidArgumentを返却する(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	// given
+	usecase := mock_usecase.NewMockBookmark(ctrl)
+	cmd := &command.UpdateBookmark{
+		ID:   "",
+		Name: "",
+		URI:  "",
+	}
+	usecase.EXPECT().Update(cmd).Return(&command.InvalidCommandError{})
+	server := NewBookmarkServer(usecase)
+	ctx := context.TODO()
+	req := &pb.UpdateBookmarkRequest{
+		BookmarkId:   "",
+		BookmarkName: "",
+		Uri:          "",
+	}
+	// when
+	object, actual := server.UpdateBookmark(ctx, req)
+	// then
+	assert.Nil(t, object)
+	expected := status.Error(codes.InvalidArgument, "request is invalid")
+	assert.Exactly(t, expected, actual)
+}
+
+func TestUpdateBookmark_ブックマークの更新に失敗した場合はInternalを返却する(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	// given
+	usecase := mock_usecase.NewMockBookmark(ctrl)
+	cmd := &command.UpdateBookmark{
+		ID:   "f81d4fae-7dec-11d0-a765-00a0c91e6bf6",
+		Name: "EXAMPLE",
+		URI:  "http://example.com",
+	}
+	usecase.EXPECT().Update(cmd).Return(fmt.Errorf("some error"))
+	server := NewBookmarkServer(usecase)
+	ctx := context.TODO()
+	req := &pb.UpdateBookmarkRequest{
+		BookmarkId:   "f81d4fae-7dec-11d0-a765-00a0c91e6bf6",
+		BookmarkName: "EXAMPLE",
+		Uri:          "http://example.com",
+	}
+	// when
+	object, actual := server.UpdateBookmark(ctx, req)
+	// then
+	assert.Nil(t, object)
+	expected := status.Error(codes.Internal, "server error")
+	assert.Exactly(t, expected, actual)
+}

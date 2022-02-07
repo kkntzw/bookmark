@@ -83,3 +83,27 @@ func (s *bookmarkServer) ListBookmarks(req *emptypb.Empty, stream pb.Bookmarker_
 	}
 	return nil
 }
+
+// ブックマークを更新する。
+//
+// 更新に成功した場合は OK を返却する。
+// 無効な引数を指定した場合は INVALID_ARGUMENT を返却する。
+// サーバエラーが発生した場合は INTERNAL を返却する。
+func (s *bookmarkServer) UpdateBookmark(ctx context.Context, req *pb.UpdateBookmarkRequest) (*emptypb.Empty, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "argument \"req\" is nil")
+	}
+	id := req.BookmarkId
+	name := req.BookmarkName
+	uri := req.Uri
+	cmd := &command.UpdateBookmark{ID: id, Name: name, URI: uri}
+	err := s.usecase.Update(cmd)
+	var icerr *command.InvalidCommandError
+	if errors.As(err, &icerr) {
+		return nil, status.Error(codes.InvalidArgument, "request is invalid")
+	}
+	if err != nil {
+		return nil, status.Error(codes.Internal, "server error")
+	}
+	return &emptypb.Empty{}, nil
+}

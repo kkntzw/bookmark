@@ -14,6 +14,8 @@ func TestNewID_正当な値を受け取るとID型のインスタンスを返却
 		{v: "-", expected: &ID{"-"}},
 		{v: "0", expected: &ID{"0"}},
 		{v: "9", expected: &ID{"9"}},
+		{v: "A", expected: &ID{"A"}},
+		{v: "Z", expected: &ID{"Z"}},
 		{v: "a", expected: &ID{"a"}},
 		{v: "z", expected: &ID{"z"}},
 	}

@@ -1,100 +1,142 @@
 package service
 
 import (
+	"errors"
 	"fmt"
 	"testing"
 
 	"github.com/golang/mock/gomock"
 	"github.com/kkntzw/bookmark/internal/domain/entity"
-	sample_entity "github.com/kkntzw/bookmark/test/data/domain/entity"
 	mock_repository "github.com/kkntzw/bookmark/test/mock/domain/repository"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewBookmarkService_service_Bookmark型のインスタンスを返却する(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-	// given
-	repository := mock_repository.NewMockBookmark(ctrl)
-	// when
-	object := NewBookmarkService(repository)
-	// then
-	interfaceObject := (*Bookmark)(nil)
-	assert.Implements(t, interfaceObject, object)
-	assert.NotNil(t, object)
+func ToID(t *testing.T, v string) *entity.ID {
+	t.Helper()
+	id, err := entity.NewID(v)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return id
 }
 
-func TestNewBookmarkService_戻り値は初期化済みのフィールドrepositoryを持つ(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-	// given
-	repository := mock_repository.NewMockBookmark(ctrl)
-	abstract := NewBookmarkService(repository)
-	// when
-	concrete, ok := abstract.(*bookmarkService)
-	// then
-	assert.True(t, ok)
-	expected := repository
-	assert.Exactly(t, expected, concrete.repository)
+func ToBookmark(t *testing.T, iv, nv, uv string, tvs ...string) *entity.Bookmark {
+	t.Helper()
+	id, err := entity.NewID(iv)
+	if err != nil {
+		t.Fatal(err)
+	}
+	name, err := entity.NewName(nv)
+	if err != nil {
+		t.Fatal(err)
+	}
+	uri, err := entity.NewURI(uv)
+	if err != nil {
+		t.Fatal(err)
+	}
+	tags := make([]entity.Tag, len(tvs))
+	for i, tv := range tvs {
+		tag, err := entity.NewTag(tv)
+		if err != nil {
+			t.Fatal(err)
+		}
+		tags[i] = *tag
+	}
+	bookmark, err := entity.NewBookmark(id, name, uri, tags)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return bookmark
 }
 
-func TestExists_ブックマークが存在する場合はtrueを返却する(t *testing.T) {
+func TestNewBookmarkService(t *testing.T) {
+	t.Parallel()
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	// given
 	repository := mock_repository.NewMockBookmark(ctrl)
-	repository.EXPECT().FindByID(sample_entity.BookmarkID()).Return(sample_entity.Bookmark(), nil)
-	service := NewBookmarkService(repository)
-	bookmark := sample_entity.Bookmark()
-	// when
-	exists, err := service.Exists(bookmark)
-	// then
-	assert.True(t, exists)
-	assert.NoError(t, err)
+	{
+		t.Run("implementing bookmark service", func(t *testing.T) {
+			t.Parallel()
+			// when
+			object := NewBookmarkService(repository)
+			// then
+			assert.NotNil(t, object)
+			interfaceObject := (*Bookmark)(nil)
+			assert.Implements(t, interfaceObject, object)
+		})
+	}
+	{
+		t.Run("fields", func(t *testing.T) {
+			t.Parallel()
+			// given
+			abstractService := NewBookmarkService(repository)
+			// when
+			concreteService, ok := abstractService.(*bookmarkService)
+			actualRepository := concreteService.repository
+			// then
+			assert.True(t, ok)
+			expectedRepository := repository
+			assert.Exactly(t, expectedRepository, actualRepository)
+		})
+	}
 }
 
-func TestExists_ブックマークが存在しない場合はfalseを返却する(t *testing.T) {
+func TestBookmark_Exists(t *testing.T) {
+	t.Parallel()
+	existingBookmark := ToBookmark(t, "1", "Example A", "https://foo.example.com")
+	nonExistingBookmark := ToBookmark(t, "2", "Example B", "https://bar.example.com")
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	// given
 	repository := mock_repository.NewMockBookmark(ctrl)
-	repository.EXPECT().FindByID(sample_entity.BookmarkID()).Return(nil, nil)
-	service := NewBookmarkService(repository)
-	bookmark := sample_entity.Bookmark()
-	// when
-	exists, err := service.Exists(bookmark)
-	// then
-	assert.False(t, exists)
-	assert.NoError(t, err)
-}
-
-func TestExists_不正な値を受け取るとエラーを返却する(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-	// given
-	repository := mock_repository.NewMockBookmark(ctrl)
-	service := NewBookmarkService(repository)
-	bookmark := (*entity.Bookmark)(nil)
-	// when
-	exists, err := service.Exists(bookmark)
-	// then
-	assert.False(t, exists)
-	errString := "argument \"bookmark\" is nil"
-	assert.EqualError(t, err, errString)
-}
-
-func TestExists_リポジトリでエラーが発生した場合はエラーを返却する(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-	// given
-	repository := mock_repository.NewMockBookmark(ctrl)
-	repository.EXPECT().FindByID(sample_entity.BookmarkID()).Return(nil, fmt.Errorf("some error"))
-	service := NewBookmarkService(repository)
-	bookmark := sample_entity.Bookmark()
-	// when
-	exists, err := service.Exists(bookmark)
-	// then
-	assert.False(t, exists)
-	errString := "failed at repository.FindByID: some error"
-	assert.EqualError(t, err, errString)
+	cases := map[string]struct {
+		prepare        func()
+		bookmark       *entity.Bookmark
+		expectedExists bool
+		expectedErr    error
+	}{
+		"existing bookmark": {
+			func() {
+				repository.EXPECT().FindByID(ToID(t, "1")).Return(existingBookmark, nil)
+			},
+			existingBookmark,
+			true,
+			nil,
+		},
+		"non-existing bookmark": {
+			func() {
+				repository.EXPECT().FindByID(ToID(t, "2")).Return(nil, nil)
+			},
+			nonExistingBookmark,
+			false,
+			nil,
+		},
+		"nil bookmark": {
+			func() {},
+			nil,
+			false,
+			errors.New("argument \"bookmark\" is nil"),
+		},
+		"failed at repository.FindByID": {
+			func() {
+				repository.EXPECT().FindByID(ToID(t, "1")).Return(nil, errors.New("some error"))
+			},
+			existingBookmark,
+			false,
+			fmt.Errorf("failed at repository.FindByID: %w", errors.New("some error")),
+		},
+	}
+	for name, tc := range cases {
+		tc := tc
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			tc.prepare()
+			// given
+			service := NewBookmarkService(repository)
+			// when
+			actualExists, actualErr := service.Exists(tc.bookmark)
+			// then
+			assert.Exactly(t, tc.expectedExists, actualExists)
+			assert.Exactly(t, tc.expectedErr, actualErr)
+		})
+	}
 }

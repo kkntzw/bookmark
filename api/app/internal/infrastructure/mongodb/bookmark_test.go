@@ -1,261 +1,296 @@
 package mongodb
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/kkntzw/bookmark/internal/domain/entity"
 	"github.com/kkntzw/bookmark/internal/domain/repository"
-	sample_entity "github.com/kkntzw/bookmark/test/data/domain/entity"
-	sample_mongodb "github.com/kkntzw/bookmark/test/data/infrastructure/mongodb"
 	"github.com/stretchr/testify/assert"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/integration/mtest"
 )
 
-func TestNewBookmarkRepository_repository_Bookmark型のインスタンスを返却する(t *testing.T) {
-	mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock))
-	defer mt.Close()
-	mt.Run("success", func(mt *mtest.T) {
-		// given
-		collection := mt.Coll
-		// when
-		object := NewBookmarkRepository(collection)
-		// then
-		interfaceObject := (*repository.Bookmark)(nil)
-		assert.Implements(t, interfaceObject, object)
-		assert.NotNil(t, object)
-	})
+func ToID(t *testing.T, v string) *entity.ID {
+	t.Helper()
+	id, err := entity.NewID(v)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return id
 }
 
-func TestNewBookmarkRepository_戻り値は初期化済みのフィールドcollectionを持つ(t *testing.T) {
-	mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock))
-	defer mt.Close()
-	mt.Run("success", func(mt *mtest.T) {
-		// given
-		collection := mt.Coll
-		abstract := NewBookmarkRepository(collection)
-		// when
-		concrete, ok := abstract.(*bookmarkRepository)
-		// then
-		assert.True(t, ok)
-		expectedType := &mongo.Collection{}
-		assert.IsType(t, expectedType, concrete.collection)
-	})
-}
-
-func TestNextID_entity_ID型のインスタンスを返却する(t *testing.T) {
-	mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock))
-	defer mt.Close()
-	mt.Run("success", func(mt *mtest.T) {
-		// given
-		collection := mt.Coll
-		repository := NewBookmarkRepository(collection)
-		// when
-		object := repository.NextID()
-		// then
-		expectedType := &entity.ID{}
-		assert.IsType(t, expectedType, object)
-		assert.NotNil(t, object)
-	})
-}
-
-func TestSave_正当な値を受け取るとnilを返却する(t *testing.T) {
-	mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock))
-	defer mt.Close()
-	mt.Run("success", func(mt *mtest.T) {
-		// given
-		collection := mt.Coll
-		mt.AddMockResponses(mtest.CreateSuccessResponse())
-		repository := NewBookmarkRepository(collection)
-		bookmark := sample_entity.Bookmark()
-		// when
-		err := repository.Save(bookmark)
-		// then
-		assert.NoError(t, err)
-	})
-}
-
-func TestSave_不正な値を受け取るとエラーを返却する(t *testing.T) {
-	mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock))
-	defer mt.Close()
-	mt.Run("success", func(mt *mtest.T) {
-		// given
-		collection := mt.Coll
-		repository := NewBookmarkRepository(collection)
-		bookmark := (*entity.Bookmark)(nil)
-		// when
-		err := repository.Save(bookmark)
-		// then
-		errString := "argument \"bookmark\" is nil"
-		assert.EqualError(t, err, errString)
-	})
-}
-
-func TestSave_ブックマークドキュメントの保存に失敗した場合はエラーを返却する(t *testing.T) {
-	mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock))
-	defer mt.Close()
-	mt.Run("success", func(mt *mtest.T) {
-		// given
-		collection := mt.Coll
-		mt.AddMockResponses(bson.D{{Key: "ok", Value: 0}})
-		repository := NewBookmarkRepository(collection)
-		bookmark := sample_entity.Bookmark()
-		// when
-		err := repository.Save(bookmark)
-		// then
-		errString := "failed at collection.UpdateByID: command failed"
-		assert.EqualError(t, err, errString)
-	})
-}
-
-func TestFindAll_ブックマークが存在する場合はentity_Bookmark型のインスタンスが含まれたスライスを返却する(t *testing.T) {
-	mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock))
-	defer mt.Close()
-	mt.Run("success", func(mt *mtest.T) {
-		// given
-		collection := mt.Coll
-		responses := []primitive.D{
-			mtest.CreateCursorResponse(1, "foo.bar", mtest.FirstBatch, sample_mongodb.BookmarkA()),
-			mtest.CreateCursorResponse(1, "foo.bar", mtest.NextBatch, sample_mongodb.BookmarkB()),
-			mtest.CreateCursorResponse(1, "foo.bar", mtest.NextBatch, sample_mongodb.BookmarkC()),
-			mtest.CreateCursorResponse(0, "foo.bar", mtest.NextBatch),
+func ToBookmark(t *testing.T, iv, nv, uv string, tvs ...string) *entity.Bookmark {
+	t.Helper()
+	id, err := entity.NewID(iv)
+	if err != nil {
+		t.Fatal(err)
+	}
+	name, err := entity.NewName(nv)
+	if err != nil {
+		t.Fatal(err)
+	}
+	uri, err := entity.NewURI(uv)
+	if err != nil {
+		t.Fatal(err)
+	}
+	tags := make([]entity.Tag, len(tvs))
+	for i, tv := range tvs {
+		tag, err := entity.NewTag(tv)
+		if err != nil {
+			t.Fatal(err)
 		}
-		mt.AddMockResponses(responses...)
-		repository := NewBookmarkRepository(collection)
-		// when
-		actual, err := repository.FindAll()
-		// then
-		expected := []entity.Bookmark{
-			*sample_entity.BookmarkA(),
-			*sample_entity.BookmarkB(),
-			*sample_entity.BookmarkC(),
-		}
-		assert.ElementsMatch(t, expected, actual)
-		assert.NoError(t, err)
-	})
+		tags[i] = *tag
+	}
+	bookmark, err := entity.NewBookmark(id, name, uri, tags)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return bookmark
 }
 
-func TestFindAll_ブックマークが存在しない場合は空のスライスを返却する(t *testing.T) {
-	mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock))
-	defer mt.Close()
-	mt.Run("success", func(mt *mtest.T) {
-		// given
-		collection := mt.Coll
-		mt.AddMockResponses(mtest.CreateCursorResponse(0, "foo.bar", mtest.FirstBatch))
-		repository := NewBookmarkRepository(collection)
-		// when
-		object, err := repository.FindAll()
-		// then
-		assert.NotNil(t, object)
-		assert.Empty(t, object)
-		assert.NoError(t, err)
-	})
+func ToBatch(t *testing.T, id, name, uri string, tags ...string) bson.D {
+	t.Helper()
+	a := bson.A{}
+	for _, tag := range tags {
+		a = append(a, tag)
+	}
+	bookmark := bson.D{
+		{Key: "_id", Value: id},
+		{Key: "name", Value: name},
+		{Key: "uri", Value: uri},
+		{Key: "tags", Value: a},
+	}
+	return bookmark
 }
 
-func TestFindAll_ブックマークドキュメントの検索に失敗した場合はエラーを返却する(t *testing.T) {
+func TestNewBookmarkRepository(t *testing.T) {
+	t.Parallel()
 	mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock))
 	defer mt.Close()
-	mt.Run("success", func(mt *mtest.T) {
-		// given
-		collection := mt.Coll
-		mt.AddMockResponses(bson.D{{Key: "ok", Value: 0}})
-		repository := NewBookmarkRepository(collection)
-		// when
-		object, err := repository.FindAll()
-		// then
-		assert.Nil(t, object)
-		errString := "failed at collection.Find: command failed"
-		assert.EqualError(t, err, errString)
-	})
+	{
+		mt.Run("implementing bookmark repository", func(mt *mtest.T) {
+			mt.Parallel()
+			// given
+			collection := mt.Coll
+			// when
+			object := NewBookmarkRepository(collection)
+			// then
+			assert.NotNil(mt, object)
+			interfaceObject := (*repository.Bookmark)(nil)
+			assert.Implements(mt, interfaceObject, object)
+		})
+	}
+	{
+		mt.Run("fields", func(mt *mtest.T) {
+			mt.Parallel()
+			// given
+			collection := mt.Coll
+			abstractRepository := NewBookmarkRepository(collection)
+			// when
+			concreteRepository, ok := abstractRepository.(*bookmarkRepository)
+			actualCollection := concreteRepository.collection
+			// then
+			assert.True(mt, ok)
+			expectedCollection := collection
+			assert.Exactly(mt, expectedCollection, actualCollection)
+		})
+	}
 }
 
-func TestFindAll_ブックマークドキュメントのデコードに失敗した場合はエラーを返却する(t *testing.T) {
+func TestBookmark_NextID(t *testing.T) {
+	t.Parallel()
 	mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock))
 	defer mt.Close()
-	mt.Run("success", func(mt *mtest.T) {
-		// given
-		collection := mt.Coll
-		mt.AddMockResponses(mtest.CreateCursorResponse(1, "foo.bar", mtest.FirstBatch, bson.D{}))
-		repository := NewBookmarkRepository(collection)
-		// when
-		object, err := repository.FindAll()
-		// then
-		assert.Nil(t, object)
-		errString := "failed at cursor.All: no responses remaining"
-		assert.EqualError(t, err, errString)
-	})
+	// given
+	collection := mt.Coll
+	repository := NewBookmarkRepository(collection)
+	// when
+	id := repository.NextID()
+	// then
+	assert.NotNil(t, id)
+	expectedType := &entity.ID{}
+	assert.IsType(t, expectedType, id)
 }
 
-func TestFindByID_該当するブックマークが存在する場合はentity_Bookmark型のインスタンスを返却する(t *testing.T) {
+func TestBookmark_Save(t *testing.T) {
+	t.Parallel()
 	mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock))
 	defer mt.Close()
-	mt.Run("success", func(mt *mtest.T) {
-		// given
-		collection := mt.Coll
-		response := mtest.CreateCursorResponse(1, "foo.bar", mtest.FirstBatch, sample_mongodb.Bookmark())
-		mt.AddMockResponses(response)
-		repository := NewBookmarkRepository(collection)
-		id := sample_entity.BookmarkID()
-		// when
-		actual, err := repository.FindByID(id)
-		// then
-		expected := sample_entity.Bookmark()
-		assert.Exactly(t, expected, actual)
-		assert.NoError(t, err)
-	})
+	cases := map[string]struct {
+		prepare     func(*mtest.T)
+		bookmark    *entity.Bookmark
+		expectedErr error
+	}{
+		"non-nil bookmark": {
+			func(mt *mtest.T) {
+				mt.AddMockResponses(mtest.CreateSuccessResponse())
+			},
+			ToBookmark(t, "1", "Example A", "https://foo.example.com"),
+			nil,
+		},
+		"nil bookmark": {
+			func(mt *mtest.T) {},
+			nil,
+			errors.New("argument \"bookmark\" is nil"),
+		},
+		"failed at collection.UpdateByID": {
+			func(mt *mtest.T) {
+				mt.AddMockResponses(bson.D{{Key: "ok", Value: 0}})
+			},
+			ToBookmark(t, "1", "Example A", "https://foo.example.com"),
+			errors.New("failed at collection.UpdateByID: command failed"),
+		},
+	}
+	for name, tc := range cases {
+		tc := tc
+		mt.Run(name, func(mt *mtest.T) {
+			mt.Parallel()
+			tc.prepare(mt)
+			// given
+			collection := mt.Coll
+			repository := NewBookmarkRepository(collection)
+			// when
+			actualErr := repository.Save(tc.bookmark)
+			// then
+			if tc.expectedErr == nil {
+				assert.NoError(mt, actualErr)
+			} else {
+				assert.Exactly(mt, tc.expectedErr.Error(), actualErr.Error())
+			}
+		})
+	}
 }
 
-func TestFindByID_該当するブックマークが存在しない場合はnilを返却する(t *testing.T) {
+func TestBookmark_FindAll(t *testing.T) {
+	t.Parallel()
+	batch1 := ToBatch(t, "1", "Example A", "https://foo.example.com")
+	batch2 := ToBatch(t, "2", "Example B", "https://bar.example.com")
+	batch3 := ToBatch(t, "3", "Example C", "https://baz.example.com")
+	bookmark1 := ToBookmark(t, "1", "Example A", "https://foo.example.com")
+	bookmark2 := ToBookmark(t, "2", "Example B", "https://bar.example.com")
+	bookmark3 := ToBookmark(t, "3", "Example C", "https://baz.example.com")
 	mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock))
 	defer mt.Close()
-	mt.Run("success", func(mt *mtest.T) {
-		// given
-		collection := mt.Coll
-		response := mtest.CreateCursorResponse(1, "foo.bar", mtest.FirstBatch, bson.D{})
-		mt.AddMockResponses(response)
-		repository := NewBookmarkRepository(collection)
-		id := sample_entity.BookmarkID()
-		// when
-		object, err := repository.FindByID(id)
-		// then
-		assert.Nil(t, object)
-		assert.NoError(t, err)
-	})
+	cases := map[string]struct {
+		prepare           func(*mtest.T)
+		expectedBookmarks []entity.Bookmark
+		expectedErr       error
+	}{
+		"stored bookmarks": {
+			func(mt *mtest.T) {
+				mt.AddMockResponses(mtest.CreateCursorResponse(1, "foo.bar", mtest.FirstBatch, batch1))
+				mt.AddMockResponses(mtest.CreateCursorResponse(1, "foo.bar", mtest.NextBatch, batch2))
+				mt.AddMockResponses(mtest.CreateCursorResponse(1, "foo.bar", mtest.NextBatch, batch3))
+				mt.AddMockResponses(mtest.CreateCursorResponse(0, "foo.bar", mtest.NextBatch))
+			},
+			[]entity.Bookmark{*bookmark1, *bookmark2, *bookmark3},
+			nil,
+		},
+		"unstored bookmarks": {
+			func(mt *mtest.T) {
+				mt.AddMockResponses(mtest.CreateCursorResponse(0, "foo.bar", mtest.FirstBatch))
+			},
+			[]entity.Bookmark{},
+			nil,
+		},
+		"failed at collection.Find": {
+			func(mt *mtest.T) {
+				mt.AddMockResponses(bson.D{{Key: "ok", Value: 0}})
+			},
+			nil,
+			errors.New("failed at collection.Find: command failed"),
+		},
+		"failed at cursor.All": {
+			func(mt *mtest.T) {
+				mt.AddMockResponses(mtest.CreateCursorResponse(1, "foo.bar", mtest.FirstBatch, bson.D{}))
+			},
+			nil,
+			errors.New("failed at cursor.All: no responses remaining"),
+		},
+	}
+	for name, tc := range cases {
+		tc := tc
+		mt.Run(name, func(mt *mtest.T) {
+			mt.Parallel()
+			tc.prepare(mt)
+			// given
+			collection := mt.Coll
+			repository := NewBookmarkRepository(collection)
+			// when
+			actualBookmarks, actualErr := repository.FindAll()
+			// then
+			assert.ElementsMatch(mt, tc.expectedBookmarks, actualBookmarks)
+			if tc.expectedErr == nil {
+				assert.NoError(mt, actualErr)
+			} else {
+				assert.Exactly(mt, tc.expectedErr.Error(), actualErr.Error())
+			}
+		})
+	}
 }
 
-func TestFindByID_不正な値を受け取るとエラーを返却する(t *testing.T) {
+func TestBookmark_FindByID(t *testing.T) {
+	t.Parallel()
+	batch := ToBatch(t, "1", "Example A", "https://foo.example.com")
+	id := ToID(t, "1")
+	bookmark := ToBookmark(t, "1", "Example A", "https://foo.example.com")
 	mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock))
 	defer mt.Close()
-	mt.Run("success", func(mt *mtest.T) {
-		// given
-		collection := mt.Coll
-		repository := NewBookmarkRepository(collection)
-		id := (*entity.ID)(nil)
-		// when
-		object, err := repository.FindByID(id)
-		// then
-		assert.Nil(t, object)
-		errString := "argument \"id\" is nil"
-		assert.EqualError(t, err, errString)
-	})
-}
-
-func TestFindByID_ブックマークドキュメントの検索に失敗した場合はエラーを返却する(t *testing.T) {
-	mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock))
-	defer mt.Close()
-	mt.Run("success", func(mt *mtest.T) {
-		// given
-		collection := mt.Coll
-		mt.AddMockResponses(bson.D{{Key: "ok", Value: 0}})
-		repository := NewBookmarkRepository(collection)
-		id := sample_entity.BookmarkID()
-		// when
-		object, err := repository.FindByID(id)
-		// then
-		assert.Nil(t, object)
-		errString := "failed at collection.FindOne: command failed"
-		assert.EqualError(t, err, errString)
-	})
+	cases := map[string]struct {
+		prepare          func(*mtest.T)
+		id               *entity.ID
+		expectedBookmark *entity.Bookmark
+		expectedErr      error
+	}{
+		"stored bookmark": {
+			func(mt *mtest.T) {
+				mt.AddMockResponses(mtest.CreateCursorResponse(1, "foo.bar", mtest.FirstBatch, batch))
+			},
+			id,
+			bookmark,
+			nil,
+		},
+		"unstored bookmark": {
+			func(mt *mtest.T) {
+				mt.AddMockResponses(mtest.CreateCursorResponse(1, "foo.bar", mtest.FirstBatch, bson.D{}))
+			},
+			id,
+			nil,
+			nil,
+		},
+		"nil id": {
+			func(mt *mtest.T) {},
+			nil,
+			nil,
+			errors.New("argument \"id\" is nil"),
+		},
+		"failed at collection.FindOne": {
+			func(mt *mtest.T) {
+				mt.AddMockResponses(bson.D{{Key: "ok", Value: 0}})
+			},
+			id,
+			nil,
+			errors.New("failed at collection.FindOne: command failed"),
+		},
+	}
+	for name, tc := range cases {
+		tc := tc
+		mt.Run(name, func(mt *mtest.T) {
+			mt.Parallel()
+			tc.prepare(mt)
+			// given
+			collection := mt.Coll
+			repository := NewBookmarkRepository(collection)
+			// when
+			actualBookmark, actualErr := repository.FindByID(tc.id)
+			// then
+			assert.Exactly(mt, tc.expectedBookmark, actualBookmark)
+			if tc.expectedErr == nil {
+				assert.NoError(mt, actualErr)
+			} else {
+				assert.Exactly(mt, tc.expectedErr.Error(), actualErr.Error())
+			}
+		})
+	}
 }

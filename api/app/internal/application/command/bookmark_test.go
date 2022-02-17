@@ -7,105 +7,132 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestRegisterBookmarkValidate_正当な場合はnilを返却する(t *testing.T) {
-	params := []struct {
-		cmd *RegisterBookmark
-	}{
-		{cmd: &RegisterBookmark{Name: "example", URI: "https://example.com", Tags: nil}},
-		{cmd: &RegisterBookmark{Name: "example", URI: "https://example.com", Tags: []string{}}},
-		{cmd: &RegisterBookmark{Name: "example", URI: "https://example.com", Tags: []string{"A", "B", "C"}}},
+func ToErrID(t *testing.T, v string) error {
+	t.Helper()
+	_, err := entity.NewID(v)
+	if err == nil {
+		t.Fatal()
 	}
-	for _, p := range params {
-		// given
-		cmd := p.cmd
-		// when
-		err := cmd.Validate()
-		// then
-		assert.NoError(t, err)
+	return err
+}
+
+func ToErrName(t *testing.T, v string) error {
+	t.Helper()
+	_, err := entity.NewName(v)
+	if err == nil {
+		t.Fatal()
+	}
+	return err
+}
+
+func ToErrURI(t *testing.T, v string) error {
+	t.Helper()
+	_, err := entity.NewURI(v)
+	if err == nil {
+		t.Fatal()
+	}
+	return err
+}
+
+func ToErrTag(t *testing.T, v string) error {
+	t.Helper()
+	_, err := entity.NewTag(v)
+	if err == nil {
+		t.Fatal()
+	}
+	return err
+}
+
+func TestRegisterBookmark_Validate(t *testing.T) {
+	t.Parallel()
+	cases := map[string]struct {
+		cmd         *RegisterBookmark
+		expectedErr error
+	}{
+		"valid arguments (nil tags)": {
+			&RegisterBookmark{"Example", "https://example.com", nil},
+			nil,
+		},
+		"valid arguments (0 tags)": {
+			&RegisterBookmark{"Example", "https://example.com", []string{}},
+			nil,
+		},
+		"valid arguments (1 tag)": {
+			&RegisterBookmark{"Example", "https://example.com", []string{"1-A"}},
+			nil,
+		},
+		"valid arguments (2 tags)": {
+			&RegisterBookmark{"Example", "https://example.com", []string{"1-A", "1-B"}},
+			nil,
+		},
+		"valid arguments (3 tags)": {
+			&RegisterBookmark{"Example", "https://example.com", []string{"1-A", "1-B", "1-C"}},
+			nil,
+		},
+		"invalid name": {
+			&RegisterBookmark{"", "https://example.com", []string{"1-A", "1-B", "1-C"}},
+			&InvalidCommandError{map[string]error{"Name": ToErrName(t, "")}},
+		},
+		"invalid uri": {
+			&RegisterBookmark{"Example", "", []string{"1-A", "1-B", "1-C"}},
+			&InvalidCommandError{map[string]error{"URI": ToErrURI(t, "")}},
+		},
+		"invalid tags": {
+			&RegisterBookmark{"Example", "https://example.com", []string{"1-A", "", "1-C"}},
+			&InvalidCommandError{map[string]error{"Tags": ToErrTag(t, "")}},
+		},
+		"invalid arguments": {
+			&RegisterBookmark{"", "", []string{""}},
+			&InvalidCommandError{map[string]error{"Name": ToErrName(t, ""), "URI": ToErrURI(t, ""), "Tags": ToErrTag(t, "")}},
+		},
+	}
+	for name, tc := range cases {
+		tc := tc
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			// when
+			actualErr := tc.cmd.Validate()
+			// then
+			assert.Exactly(t, tc.expectedErr, actualErr)
+		})
 	}
 }
 
-func TestRegisterBookmarkValidate_不正な場合はInvalidCommandErrorを返却する(t *testing.T) {
-	_, errName := entity.NewName("")
-	_, errUri := entity.NewURI("")
-	_, errTag := entity.NewTag("")
-	params := []struct {
-		cmd      *RegisterBookmark
-		expected error
+func TestUpdateBookmark_Validate(t *testing.T) {
+	t.Parallel()
+	cases := map[string]struct {
+		cmd         *UpdateBookmark
+		expectedErr error
 	}{
-		{
-			cmd:      &RegisterBookmark{Name: "", URI: "https://example.com", Tags: []string{"A", "B", "C"}},
-			expected: &InvalidCommandError{Args: map[string]error{"Name": errName}},
+		"valid arguments": {
+			&UpdateBookmark{"1", "Example", "https://example.com"},
+			nil,
 		},
-		{
-			cmd:      &RegisterBookmark{Name: "example", URI: "", Tags: []string{"A", "B", "C"}},
-			expected: &InvalidCommandError{Args: map[string]error{"URI": errUri}},
+		"invalid id": {
+			&UpdateBookmark{"", "Example", "https://example.com"},
+			&InvalidCommandError{map[string]error{"ID": ToErrID(t, "")}},
 		},
-		{
-			cmd:      &RegisterBookmark{Name: "example", URI: "https://example.com", Tags: []string{"A", "", "C"}},
-			expected: &InvalidCommandError{Args: map[string]error{"Tags": errTag}},
+		"invalid name": {
+			&UpdateBookmark{"1", "", "https://example.com"},
+			&InvalidCommandError{map[string]error{"Name": ToErrName(t, "")}},
 		},
-		{
-			cmd:      &RegisterBookmark{Name: "", URI: "", Tags: []string{""}},
-			expected: &InvalidCommandError{Args: map[string]error{"Name": errName, "URI": errUri, "Tags": errTag}},
+		"invalid uri": {
+			&UpdateBookmark{"1", "Example", ""},
+			&InvalidCommandError{map[string]error{"URI": ToErrURI(t, "")}},
 		},
-	}
-	for _, p := range params {
-		// given
-		cmd := p.cmd
-		// when
-		actual := cmd.Validate()
-		// then
-		expected := p.expected
-		assert.Exactly(t, expected, actual)
-	}
-}
-
-func TestUpdateBookmarkValidate_正当な場合はnilを返却する(t *testing.T) {
-	// given
-	cmd := &UpdateBookmark{
-		ID:   "f81d4fae-7dec-11d0-a765-00a0c91e6bf6",
-		Name: "EXAMPLE",
-		URI:  "http://example.com",
-	}
-	// when
-	err := cmd.Validate()
-	// then
-	assert.NoError(t, err)
-}
-
-func TestUpdateBookmarkValidate_不正な場合はInvalidCommandErrorを返却する(t *testing.T) {
-	_, errId := entity.NewID("")
-	_, errName := entity.NewName("")
-	_, errUri := entity.NewURI("")
-	params := []struct {
-		cmd      *UpdateBookmark
-		expected error
-	}{
-		{
-			cmd:      &UpdateBookmark{ID: "", Name: "EXAMPLE", URI: "http://example.com"},
-			expected: &InvalidCommandError{Args: map[string]error{"ID": errId}},
-		},
-		{
-			cmd:      &UpdateBookmark{ID: "f81d4fae-7dec-11d0-a765-00a0c91e6bf6", Name: "", URI: "http://example.com"},
-			expected: &InvalidCommandError{Args: map[string]error{"Name": errName}},
-		},
-		{
-			cmd:      &UpdateBookmark{ID: "f81d4fae-7dec-11d0-a765-00a0c91e6bf6", Name: "EXAMPLE", URI: ""},
-			expected: &InvalidCommandError{Args: map[string]error{"URI": errUri}},
-		},
-		{
-			cmd:      &UpdateBookmark{ID: "", Name: "", URI: ""},
-			expected: &InvalidCommandError{Args: map[string]error{"ID": errId, "Name": errName, "URI": errUri}},
+		"invalid arguments": {
+			&UpdateBookmark{"", "", ""},
+			&InvalidCommandError{map[string]error{"ID": ToErrID(t, ""), "Name": ToErrName(t, ""), "URI": ToErrURI(t, "")}},
 		},
 	}
-	for _, p := range params {
-		// given
-		cmd := p.cmd
-		// when
-		actual := cmd.Validate()
-		// then
-		expected := p.expected
-		assert.Exactly(t, expected, actual)
+	for name, tc := range cases {
+		tc := tc
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			// when
+			actualErr := tc.cmd.Validate()
+			// then
+			assert.Exactly(t, tc.expectedErr, actualErr)
+		})
 	}
 }

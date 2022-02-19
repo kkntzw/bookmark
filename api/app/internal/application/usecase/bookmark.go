@@ -111,7 +111,7 @@ func (u *bookmarkUsecase) Update(cmd *command.UpdateBookmark) error {
 	uri, _ := entity.NewURI(cmd.URI)
 	bookmark.RewriteURI(uri)
 	if err := u.repository.Save(bookmark); err != nil {
-		return fmt.Errorf("failed at repository.Save: some error")
+		return fmt.Errorf("failed at repository.Save: %w", err)
 	}
 	return nil
 }

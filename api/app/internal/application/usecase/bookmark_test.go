@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"errors"
 	"fmt"
 	"testing"
 
@@ -8,326 +9,321 @@ import (
 	"github.com/kkntzw/bookmark/internal/application/command"
 	"github.com/kkntzw/bookmark/internal/application/dto"
 	"github.com/kkntzw/bookmark/internal/domain/entity"
-	sample_dto "github.com/kkntzw/bookmark/test/data/application/dto"
-	sample_entity "github.com/kkntzw/bookmark/test/data/domain/entity"
 	mock_repository "github.com/kkntzw/bookmark/test/mock/domain/repository"
 	mock_service "github.com/kkntzw/bookmark/test/mock/domain/service"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewBookmarkUsecase_usecase_Bookmark型のインスタンスを返却する(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-	// given
-	repository := mock_repository.NewMockBookmark(ctrl)
-	service := mock_service.NewMockBookmark(ctrl)
-	// when
-	object := NewBookmarkUsecase(repository, service)
-	// then
-	interfaceObject := (*Bookmark)(nil)
-	assert.Implements(t, interfaceObject, object)
-	assert.NotNil(t, object)
-}
-
-func TestNewBookmarkUsecase_戻り値は初期化済みのフィールドrepositoryとserviceを持つ(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-	// given
-	repository := mock_repository.NewMockBookmark(ctrl)
-	service := mock_service.NewMockBookmark(ctrl)
-	abstract := NewBookmarkUsecase(repository, service)
-	// when
-	concrete, ok := abstract.(*bookmarkUsecase)
-	// then
-	assert.True(t, ok)
-	expectedRepository := repository
-	assert.Exactly(t, expectedRepository, concrete.repository)
-	expectedService := service
-	assert.Exactly(t, expectedService, concrete.service)
-}
-
-func TestRegister_正当な値を受け取るとnilを返却する(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-	// given
-	repository := mock_repository.NewMockBookmark(ctrl)
-	repository.EXPECT().NextID().Return(sample_entity.BookmarkID())
-	repository.EXPECT().Save(sample_entity.Bookmark()).Return(nil)
-	service := mock_service.NewMockBookmark(ctrl)
-	service.EXPECT().Exists(sample_entity.Bookmark()).Return(false, nil)
-	usecase := NewBookmarkUsecase(repository, service)
-	cmd := &command.RegisterBookmark{
-		Name: "example",
-		URI:  "https://example.com",
-		Tags: []string{"1", "2", "3"},
+func ToID(t *testing.T, v string) *entity.ID {
+	t.Helper()
+	id, err := entity.NewID(v)
+	if err != nil {
+		t.Fatal(err)
 	}
-	// when
-	err := usecase.Register(cmd)
-	// then
-	assert.NoError(t, err)
+	return id
 }
 
-func TestRegister_不正な値を受け取るとエラーを返却する(t *testing.T) {
+func ToErrID(t *testing.T, v string) error {
+	t.Helper()
+	_, err := entity.NewID(v)
+	if err == nil {
+		t.Fatal()
+	}
+	return err
+}
+
+func ToErrName(t *testing.T, v string) error {
+	t.Helper()
+	_, err := entity.NewName(v)
+	if err == nil {
+		t.Fatal()
+	}
+	return err
+}
+
+func ToErrURI(t *testing.T, v string) error {
+	t.Helper()
+	_, err := entity.NewURI(v)
+	if err == nil {
+		t.Fatal()
+	}
+	return err
+}
+
+func ToErrTag(t *testing.T, v string) error {
+	t.Helper()
+	_, err := entity.NewTag(v)
+	if err == nil {
+		t.Fatal()
+	}
+	return err
+}
+
+func ToBookmark(t *testing.T, iv, nv, uv string, tvs ...string) *entity.Bookmark {
+	t.Helper()
+	id, err := entity.NewID(iv)
+	if err != nil {
+		t.Fatal(err)
+	}
+	name, err := entity.NewName(nv)
+	if err != nil {
+		t.Fatal(err)
+	}
+	uri, err := entity.NewURI(uv)
+	if err != nil {
+		t.Fatal(err)
+	}
+	tags := make([]entity.Tag, len(tvs))
+	for i, tv := range tvs {
+		tag, err := entity.NewTag(tv)
+		if err != nil {
+			t.Fatal(err)
+		}
+		tags[i] = *tag
+	}
+	bookmark, err := entity.NewBookmark(id, name, uri, tags)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return bookmark
+}
+
+func TestNewBookmarkUsecase(t *testing.T) {
+	t.Parallel()
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	_, errName := entity.NewName("")
-	_, errUri := entity.NewURI("")
-	_, errTag := entity.NewTag("")
-	params := []struct {
-		cmd      *command.RegisterBookmark
-		expected error
+	{
+		t.Run("implementing bookmark usecase", func(t *testing.T) {
+			t.Parallel()
+			// given
+			repository := mock_repository.NewMockBookmark(ctrl)
+			service := mock_service.NewMockBookmark(ctrl)
+			// when
+			object := NewBookmarkUsecase(repository, service)
+			// then
+			assert.NotNil(t, object)
+			interfaceObject := (*Bookmark)(nil)
+			assert.Implements(t, interfaceObject, object)
+		})
+	}
+	{
+		t.Run("fields", func(t *testing.T) {
+			t.Parallel()
+			// given
+			repository := mock_repository.NewMockBookmark(ctrl)
+			service := mock_service.NewMockBookmark(ctrl)
+			abstractUsecase := NewBookmarkUsecase(repository, service)
+			// when
+			concreteUsecase, ok := abstractUsecase.(*bookmarkUsecase)
+			actualRepository := concreteUsecase.repository
+			actualService := concreteUsecase.service
+			// then
+			assert.True(t, ok)
+			expectedRepository := repository
+			assert.Exactly(t, expectedRepository, actualRepository)
+			expectedService := service
+			assert.Exactly(t, expectedService, actualService)
+		})
+	}
+}
+
+func TestBookmark_Register(t *testing.T) {
+	t.Parallel()
+	bookmark := ToBookmark(t, "1", "Example A", "https://foo.example.com", "1-A", "1-B", "1-C")
+	cmd := &command.RegisterBookmark{Name: "Example A", URI: "https://foo.example.com", Tags: []string{"1-A", "1-B", "1-C"}}
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	cases := map[string]struct {
+		prepare     func(*mock_repository.MockBookmark, *mock_service.MockBookmark)
+		cmd         *command.RegisterBookmark
+		expectedErr error
 	}{
-		{
-			cmd:      nil,
-			expected: fmt.Errorf("argument \"cmd\" is nil"),
+		"non-nil command": {
+			func(repository *mock_repository.MockBookmark, service *mock_service.MockBookmark) {
+				repository.EXPECT().NextID().Return(ToID(t, "1"))
+				repository.EXPECT().Save(bookmark).Return(nil)
+				service.EXPECT().Exists(bookmark).Return(false, nil)
+			},
+			cmd,
+			nil,
 		},
-		{
-			cmd:      &command.RegisterBookmark{Name: "", URI: "", Tags: []string{""}},
-			expected: &command.InvalidCommandError{Args: map[string]error{"Name": errName, "URI": errUri, "Tags": errTag}},
+		"nil command": {
+			func(repository *mock_repository.MockBookmark, service *mock_service.MockBookmark) {},
+			nil,
+			errors.New("argument \"cmd\" is nil"),
+		},
+		"invalid command": {
+			func(repository *mock_repository.MockBookmark, service *mock_service.MockBookmark) {},
+			&command.RegisterBookmark{Name: "", URI: "", Tags: []string{""}},
+			&command.InvalidCommandError{Args: map[string]error{"Name": ToErrName(t, ""), "URI": ToErrURI(t, ""), "Tags": ToErrTag(t, "")}},
+		},
+		"duplicate bookmark": {
+			func(repository *mock_repository.MockBookmark, service *mock_service.MockBookmark) {
+				repository.EXPECT().NextID().Return(ToID(t, "1"))
+				service.EXPECT().Exists(bookmark).Return(true, nil)
+			},
+			cmd,
+			errors.New("bookmark already exists"),
+		},
+		"failed at service.Exists": {
+			func(repository *mock_repository.MockBookmark, service *mock_service.MockBookmark) {
+				repository.EXPECT().NextID().Return(ToID(t, "1"))
+				service.EXPECT().Exists(bookmark).Return(false, errors.New("some error"))
+			},
+			cmd,
+			fmt.Errorf("failed at service.Exists: %w", errors.New("some error")),
+		},
+		"failed at repository.Save": {
+			func(repository *mock_repository.MockBookmark, service *mock_service.MockBookmark) {
+				repository.EXPECT().NextID().Return(ToID(t, "1"))
+				repository.EXPECT().Save(bookmark).Return(errors.New("some error"))
+				service.EXPECT().Exists(bookmark).Return(false, nil)
+			},
+			cmd,
+			fmt.Errorf("failed at repository.Save: %w", errors.New("some error")),
 		},
 	}
-	for _, p := range params {
-		// given
-		repository := mock_repository.NewMockBookmark(ctrl)
-		service := mock_service.NewMockBookmark(ctrl)
-		usecase := NewBookmarkUsecase(repository, service)
-		cmd := p.cmd
-		// when
-		actual := usecase.Register(cmd)
-		// then
-		assert.Exactly(t, p.expected, actual)
+	for name, tc := range cases {
+		tc := tc
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			repository := mock_repository.NewMockBookmark(ctrl)
+			service := mock_service.NewMockBookmark(ctrl)
+			tc.prepare(repository, service)
+			// given
+			usecase := NewBookmarkUsecase(repository, service)
+			// when
+			actualErr := usecase.Register(tc.cmd)
+			// then
+			assert.Exactly(t, tc.expectedErr, actualErr)
+		})
 	}
 }
 
-func TestRegister_ブックマークが重複して存在する場合はエラーを返却する(t *testing.T) {
+func TestBookmark_List(t *testing.T) {
+	t.Parallel()
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	// given
-	repository := mock_repository.NewMockBookmark(ctrl)
-	repository.EXPECT().NextID().Return(sample_entity.BookmarkID())
-	service := mock_service.NewMockBookmark(ctrl)
-	service.EXPECT().Exists(sample_entity.Bookmark()).Return(true, nil)
-	usecase := NewBookmarkUsecase(repository, service)
-	cmd := &command.RegisterBookmark{
-		Name: "example",
-		URI:  "https://example.com",
-		Tags: []string{"1", "2", "3"},
-	}
-	// when
-	err := usecase.Register(cmd)
-	// then
-	errString := "bookmark already exists"
-	assert.EqualError(t, err, errString)
-}
-
-func TestRegister_ブックマーク重複確認中にエラーが発生した場合はエラーを返却する(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-	// given
-	repository := mock_repository.NewMockBookmark(ctrl)
-	repository.EXPECT().NextID().Return(sample_entity.BookmarkID())
-	service := mock_service.NewMockBookmark(ctrl)
-	service.EXPECT().Exists(sample_entity.Bookmark()).Return(false, fmt.Errorf("some error"))
-	usecase := NewBookmarkUsecase(repository, service)
-	cmd := &command.RegisterBookmark{
-		Name: "example",
-		URI:  "https://example.com",
-		Tags: []string{"1", "2", "3"},
-	}
-	// when
-	err := usecase.Register(cmd)
-	// then
-	errString := "failed at service.Exists: some error"
-	assert.EqualError(t, err, errString)
-}
-
-func TestRegister_リポジトリの操作に失敗した場合はエラーを返却する(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-	// given
-	repository := mock_repository.NewMockBookmark(ctrl)
-	repository.EXPECT().NextID().Return(sample_entity.BookmarkID())
-	repository.EXPECT().Save(sample_entity.Bookmark()).Return(fmt.Errorf("some error"))
-	service := mock_service.NewMockBookmark(ctrl)
-	service.EXPECT().Exists(sample_entity.Bookmark()).Return(false, nil)
-	usecase := NewBookmarkUsecase(repository, service)
-	cmd := &command.RegisterBookmark{
-		Name: "example",
-		URI:  "https://example.com",
-		Tags: []string{"1", "2", "3"},
-	}
-	// when
-	err := usecase.Register(cmd)
-	// then
-	errString := "failed at repository.Save: some error"
-	assert.EqualError(t, err, errString)
-}
-
-func TestList_ブックマークが存在する場合はdto_Bookmark型のインスタンスが含まれたスライスを返却する(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-	// given
-	repository := mock_repository.NewMockBookmark(ctrl)
-	repository.EXPECT().FindAll().Return([]entity.Bookmark{
-		*sample_entity.BookmarkA(),
-		*sample_entity.BookmarkB(),
-		*sample_entity.BookmarkC(),
-	}, nil)
-	service := mock_service.NewMockBookmark(ctrl)
-	usecase := NewBookmarkUsecase(repository, service)
-	// when
-	actual, err := usecase.List()
-	// then
-	expected := []dto.Bookmark{
-		sample_dto.BookmarkA(),
-		sample_dto.BookmarkB(),
-		sample_dto.BookmarkC(),
-	}
-	assert.ElementsMatch(t, expected, actual)
-	assert.NoError(t, err)
-}
-
-func TestList_ブックマークが存在しない場合は空のスライスを返却する(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-	// given
-	repository := mock_repository.NewMockBookmark(ctrl)
-	repository.EXPECT().FindAll().Return([]entity.Bookmark{}, nil)
-	service := mock_service.NewMockBookmark(ctrl)
-	usecase := NewBookmarkUsecase(repository, service)
-	// when
-	object, err := usecase.List()
-	// then
-	assert.NotNil(t, object)
-	assert.Empty(t, object)
-	assert.NoError(t, err)
-}
-
-func TestList_リポジトリの操作に失敗した場合はエラーを返却する(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-	// given
-	repository := mock_repository.NewMockBookmark(ctrl)
-	repository.EXPECT().FindAll().Return(nil, fmt.Errorf("some error"))
-	service := mock_service.NewMockBookmark(ctrl)
-	usecase := NewBookmarkUsecase(repository, service)
-	// when
-	object, err := usecase.List()
-	// then
-	assert.Nil(t, object)
-	errString := "failed at repository.FindAll: some error"
-	assert.EqualError(t, err, errString)
-}
-
-func TestUpdate_正当な値を受け取るとnilを返却する(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-	// given
-	repository := mock_repository.NewMockBookmark(ctrl)
-	repository.EXPECT().FindByID(sample_entity.BookmarkID()).Return(sample_entity.Bookmark(), nil)
-	repository.EXPECT().Save(sample_entity.ModifiedBookmark()).Return(nil)
-	service := mock_service.NewMockBookmark(ctrl)
-	usecase := NewBookmarkUsecase(repository, service)
-	cmd := &command.UpdateBookmark{
-		ID:   "f81d4fae-7dec-11d0-a765-00a0c91e6bf6",
-		Name: "EXAMPLE",
-		URI:  "http://example.com",
-	}
-	// when
-	err := usecase.Update(cmd)
-	// then
-	assert.NoError(t, err)
-}
-
-func TestUpdate_不正な値を受け取るとエラーを返却する(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-	_, errId := entity.NewID("")
-	_, errName := entity.NewName("")
-	_, errUri := entity.NewURI("")
-	params := []struct {
-		cmd      *command.UpdateBookmark
-		expected error
+	cases := map[string]struct {
+		prepare           func(*mock_repository.MockBookmark)
+		expectedBookmarks []dto.Bookmark
+		expectedErr       error
 	}{
-		{
-			cmd:      nil,
-			expected: fmt.Errorf("argument \"cmd\" is nil"),
+		"3 bookmarks": {
+			func(repository *mock_repository.MockBookmark) {
+				repository.EXPECT().FindAll().Return([]entity.Bookmark{
+					*ToBookmark(t, "1", "Example A", "https://foo.example.com"),
+					*ToBookmark(t, "2", "Example B", "https://bar.example.com", "2-A"),
+					*ToBookmark(t, "3", "Example C", "https://baz.example.com", "3-A", "3-B"),
+				}, nil)
+			},
+			[]dto.Bookmark{
+				{ID: "1", Name: "Example A", URI: "https://foo.example.com", Tags: []string{}},
+				{ID: "2", Name: "Example B", URI: "https://bar.example.com", Tags: []string{"2-A"}},
+				{ID: "3", Name: "Example C", URI: "https://baz.example.com", Tags: []string{"3-A", "3-B"}},
+			},
+			nil,
 		},
-		{
-			cmd:      &command.UpdateBookmark{ID: "", Name: "", URI: ""},
-			expected: &command.InvalidCommandError{Args: map[string]error{"ID": errId, "Name": errName, "URI": errUri}},
+		"no bookmarks": {
+			func(repository *mock_repository.MockBookmark) {
+				repository.EXPECT().FindAll().Return([]entity.Bookmark{}, nil)
+			},
+			[]dto.Bookmark{},
+			nil,
+		},
+		"failed at repository.FindAll": {
+			func(repository *mock_repository.MockBookmark) {
+				repository.EXPECT().FindAll().Return(nil, errors.New("some error"))
+			},
+			nil,
+			fmt.Errorf("failed at repository.FindAll: %w", errors.New("some error")),
 		},
 	}
-	for _, p := range params {
-		// given
-		repository := mock_repository.NewMockBookmark(ctrl)
-		service := mock_service.NewMockBookmark(ctrl)
-		usecase := NewBookmarkUsecase(repository, service)
-		cmd := p.cmd
-		// when
-		actual := usecase.Update(cmd)
-		// then
-		assert.Exactly(t, p.expected, actual)
+	for name, tc := range cases {
+		tc := tc
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			repository := mock_repository.NewMockBookmark(ctrl)
+			service := mock_service.NewMockBookmark(ctrl)
+			tc.prepare(repository)
+			// given
+			usecase := NewBookmarkUsecase(repository, service)
+			// when
+			actualBookmarks, actualErr := usecase.List()
+			// then
+			assert.Exactly(t, tc.expectedBookmarks, actualBookmarks)
+			assert.Exactly(t, tc.expectedErr, actualErr)
+		})
 	}
 }
 
-func TestUpdate_ブックマークの検索に失敗した場合はエラーを返却する(t *testing.T) {
+func TestBookmark_Update(t *testing.T) {
+	t.Parallel()
+	id := ToID(t, "1")
+	bookmark := ToBookmark(t, "1", "Example Foo", "https://foo.example.com", "1-A", "1-B", "1-C")
+	modifiedBookmark := ToBookmark(t, "1", "Example Bar", "https://foo.example.com/bar", "1-A", "1-B", "1-C")
+	cmd := &command.UpdateBookmark{ID: "1", Name: "Example Bar", URI: "https://foo.example.com/bar"}
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	// given
-	repository := mock_repository.NewMockBookmark(ctrl)
-	repository.EXPECT().FindByID(sample_entity.BookmarkID()).Return(nil, fmt.Errorf("some error"))
-	service := mock_service.NewMockBookmark(ctrl)
-	usecase := NewBookmarkUsecase(repository, service)
-	cmd := &command.UpdateBookmark{
-		ID:   "f81d4fae-7dec-11d0-a765-00a0c91e6bf6",
-		Name: "EXAMPLE",
-		URI:  "http://example.com",
+	cases := map[string]struct {
+		prepare     func(*mock_repository.MockBookmark)
+		cmd         *command.UpdateBookmark
+		expectedErr error
+	}{
+		"non-nil command": {
+			func(repository *mock_repository.MockBookmark) {
+				repository.EXPECT().FindByID(id).Return(bookmark, nil)
+				repository.EXPECT().Save(modifiedBookmark).Return(nil)
+			},
+			cmd,
+			nil,
+		},
+		"nil command": {
+			func(repository *mock_repository.MockBookmark) {},
+			nil,
+			errors.New("argument \"cmd\" is nil"),
+		},
+		"invalid command": {
+			func(repository *mock_repository.MockBookmark) {},
+			&command.UpdateBookmark{ID: "", Name: "", URI: ""},
+			&command.InvalidCommandError{Args: map[string]error{"ID": ToErrID(t, ""), "Name": ToErrName(t, ""), "URI": ToErrURI(t, "")}},
+		},
+		"non-existent bookmark": {
+			func(repository *mock_repository.MockBookmark) {
+				repository.EXPECT().FindByID(id).Return(nil, nil)
+			},
+			cmd,
+			errors.New("bookmark does not exist"),
+		},
+		"failed at repository.FindByID": {
+			func(repository *mock_repository.MockBookmark) {
+				repository.EXPECT().FindByID(id).Return(nil, errors.New("some error"))
+			},
+			cmd,
+			fmt.Errorf("failed at repository.FindByID: %w", errors.New("some error")),
+		},
+		"failed at repository.Save": {
+			func(repository *mock_repository.MockBookmark) {
+				repository.EXPECT().FindByID(id).Return(bookmark, nil)
+				repository.EXPECT().Save(modifiedBookmark).Return(errors.New("some error"))
+			},
+			cmd,
+			fmt.Errorf("failed at repository.Save: %w", errors.New("some error")),
+		},
 	}
-	// when
-	err := usecase.Update(cmd)
-	// then
-	errString := "failed at repository.FindByID: some error"
-	assert.EqualError(t, err, errString)
-}
-
-func TestUpdate_ブックマークが存在しない場合はエラーを返却する(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-	// given
-	repository := mock_repository.NewMockBookmark(ctrl)
-	repository.EXPECT().FindByID(sample_entity.BookmarkID()).Return(nil, nil)
-	service := mock_service.NewMockBookmark(ctrl)
-	usecase := NewBookmarkUsecase(repository, service)
-	cmd := &command.UpdateBookmark{
-		ID:   "f81d4fae-7dec-11d0-a765-00a0c91e6bf6",
-		Name: "EXAMPLE",
-		URI:  "http://example.com",
+	for name, tc := range cases {
+		tc := tc
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			repository := mock_repository.NewMockBookmark(ctrl)
+			service := mock_service.NewMockBookmark(ctrl)
+			tc.prepare(repository)
+			// given
+			usecase := NewBookmarkUsecase(repository, service)
+			// when
+			actualErr := usecase.Update(tc.cmd)
+			// then
+			assert.Exactly(t, tc.expectedErr, actualErr)
+		})
 	}
-	// when
-	err := usecase.Update(cmd)
-	// then
-	errString := "bookmark does not exist"
-	assert.EqualError(t, err, errString)
-}
-
-func TestUpdate_ブックマークの保存に失敗した場合はエラーを返却する(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-	// given
-	repository := mock_repository.NewMockBookmark(ctrl)
-	repository.EXPECT().FindByID(sample_entity.BookmarkID()).Return(sample_entity.Bookmark(), nil)
-	repository.EXPECT().Save(sample_entity.ModifiedBookmark()).Return(fmt.Errorf("some error"))
-	service := mock_service.NewMockBookmark(ctrl)
-	usecase := NewBookmarkUsecase(repository, service)
-	cmd := &command.UpdateBookmark{
-		ID:   "f81d4fae-7dec-11d0-a765-00a0c91e6bf6",
-		Name: "EXAMPLE",
-		URI:  "http://example.com",
-	}
-	// when
-	err := usecase.Update(cmd)
-	// then
-	errString := "failed at repository.Save: some error"
-	assert.EqualError(t, err, errString)
 }

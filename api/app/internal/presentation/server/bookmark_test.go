@@ -9,6 +9,7 @@ import (
 	"github.com/kkntzw/bookmark/internal/application/command"
 	"github.com/kkntzw/bookmark/internal/application/dto"
 	"github.com/kkntzw/bookmark/internal/presentation/pb"
+	"github.com/kkntzw/bookmark/test/helper"
 	mock_usecase "github.com/kkntzw/bookmark/test/mock/application/usecase"
 	mock_pb "github.com/kkntzw/bookmark/test/mock/presentation/pb"
 	"github.com/stretchr/testify/assert"
@@ -16,45 +17,6 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
-
-func ToCreateBookmarkRequest(t *testing.T, name, uri string, tagNames ...string) *pb.CreateBookmarkRequest {
-	t.Helper()
-	tags := make([]*pb.Tag, len(tagNames))
-	for i, tagName := range tagNames {
-		tags[i] = &pb.Tag{TagName: tagName}
-	}
-	req := &pb.CreateBookmarkRequest{
-		BookmarkName: name,
-		Uri:          uri,
-		Tags:         tags,
-	}
-	return req
-}
-
-func ToUpdateBookmarkRequest(t *testing.T, id, name, uri string) *pb.UpdateBookmarkRequest {
-	t.Helper()
-	req := &pb.UpdateBookmarkRequest{
-		BookmarkId:   id,
-		BookmarkName: name,
-		Uri:          uri,
-	}
-	return req
-}
-
-func ToBookmark(t *testing.T, id, name, uri string, tagNames ...string) *pb.Bookmark {
-	t.Helper()
-	tags := make([]*pb.Tag, len(tagNames))
-	for i, tagName := range tagNames {
-		tags[i] = &pb.Tag{TagName: tagName}
-	}
-	bookmark := &pb.Bookmark{
-		BookmarkId:   id,
-		BookmarkName: name,
-		Uri:          uri,
-		Tags:         tags,
-	}
-	return bookmark
-}
 
 func TestNewBookmarkServer(t *testing.T) {
 	t.Parallel()
@@ -93,7 +55,7 @@ func TestNewBookmarkServer(t *testing.T) {
 func TestBookmark_CreateBookmark(t *testing.T) {
 	t.Parallel()
 	cmd := &command.RegisterBookmark{Name: "Example A", URI: "https://foo.example.com", Tags: []string{"1-A", "1-B", "1-C"}}
-	req := ToCreateBookmarkRequest(t, "Example A", "https://foo.example.com", "1-A", "1-B", "1-C")
+	req := helper.ToCreateBookmarkRequest(t, "Example A", "https://foo.example.com", "1-A", "1-B", "1-C")
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	cases := map[string]struct {
@@ -123,7 +85,7 @@ func TestBookmark_CreateBookmark(t *testing.T) {
 					Register(&command.RegisterBookmark{Name: "Example A", URI: "", Tags: []string{}}).
 					Return(&command.InvalidCommandError{Args: map[string]error{"URI": errors.New("some error")}})
 			},
-			ToCreateBookmarkRequest(t, "Example A", ""),
+			helper.ToCreateBookmarkRequest(t, "Example A", ""),
 			nil,
 			status.Error(codes.InvalidArgument, "request is invalid"),
 		},
@@ -171,9 +133,9 @@ func TestBookmark_ListBookmarks(t *testing.T) {
 		"non-nil request": {
 			func(usecase *mock_usecase.MockBookmark, stream *mock_pb.MockBookmarker_ListBookmarksServer) {
 				usecase.EXPECT().List().Return(bookmarks, nil)
-				stream.EXPECT().Send(ToBookmark(t, "1", "Example A", "https://foo.example.com")).Return(nil)
-				stream.EXPECT().Send(ToBookmark(t, "2", "Example B", "https://bar.example.com", "2-A")).Return(nil)
-				stream.EXPECT().Send(ToBookmark(t, "3", "Example C", "https://baz.example.com", "3-A", "3-B")).Return(nil)
+				stream.EXPECT().Send(helper.ToBookmarkMessage(t, "1", "Example A", "https://foo.example.com")).Return(nil)
+				stream.EXPECT().Send(helper.ToBookmarkMessage(t, "2", "Example B", "https://bar.example.com", "2-A")).Return(nil)
+				stream.EXPECT().Send(helper.ToBookmarkMessage(t, "3", "Example C", "https://baz.example.com", "3-A", "3-B")).Return(nil)
 			},
 			&emptypb.Empty{},
 			nil,
@@ -193,8 +155,8 @@ func TestBookmark_ListBookmarks(t *testing.T) {
 		"failed at stream.Send": {
 			func(usecase *mock_usecase.MockBookmark, stream *mock_pb.MockBookmarker_ListBookmarksServer) {
 				usecase.EXPECT().List().Return(bookmarks, nil)
-				stream.EXPECT().Send(ToBookmark(t, "1", "Example A", "https://foo.example.com")).Return(nil)
-				stream.EXPECT().Send(ToBookmark(t, "2", "Example B", "https://bar.example.com", "2-A")).Return(errors.New("some error"))
+				stream.EXPECT().Send(helper.ToBookmarkMessage(t, "1", "Example A", "https://foo.example.com")).Return(nil)
+				stream.EXPECT().Send(helper.ToBookmarkMessage(t, "2", "Example B", "https://bar.example.com", "2-A")).Return(errors.New("some error"))
 			},
 			&emptypb.Empty{},
 			status.Error(codes.Internal, "response failed"),
@@ -236,7 +198,7 @@ func TestBookmark_UpdateBookmark(t *testing.T) {
 			func(usecase *mock_usecase.MockBookmark) {
 				usecase.EXPECT().Update(cmd).Return(nil)
 			},
-			ToUpdateBookmarkRequest(t, "1", "Example Bar", "https://foo.example.com/bar"),
+			helper.ToUpdateBookmarkRequest(t, "1", "Example Bar", "https://foo.example.com/bar"),
 			&emptypb.Empty{},
 			nil,
 		},
@@ -250,7 +212,7 @@ func TestBookmark_UpdateBookmark(t *testing.T) {
 			func(usecase *mock_usecase.MockBookmark) {
 				usecase.EXPECT().Update(&command.UpdateBookmark{ID: "", Name: "", URI: ""}).Return(&command.InvalidCommandError{})
 			},
-			ToUpdateBookmarkRequest(t, "", "", ""),
+			helper.ToUpdateBookmarkRequest(t, "", "", ""),
 			nil,
 			status.Error(codes.InvalidArgument, "request is invalid"),
 		},
@@ -258,7 +220,7 @@ func TestBookmark_UpdateBookmark(t *testing.T) {
 			func(usecase *mock_usecase.MockBookmark) {
 				usecase.EXPECT().Update(cmd).Return(errors.New("some error"))
 			},
-			ToUpdateBookmarkRequest(t, "1", "Example Bar", "https://foo.example.com/bar"),
+			helper.ToUpdateBookmarkRequest(t, "1", "Example Bar", "https://foo.example.com/bar"),
 			nil,
 			status.Error(codes.Internal, "server error"),
 		},

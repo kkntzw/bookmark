@@ -6,63 +6,11 @@ import (
 
 	"github.com/kkntzw/bookmark/internal/domain/entity"
 	"github.com/kkntzw/bookmark/internal/domain/repository"
+	"github.com/kkntzw/bookmark/test/helper"
 	"github.com/stretchr/testify/assert"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/integration/mtest"
 )
-
-func ToID(t *testing.T, v string) *entity.ID {
-	t.Helper()
-	id, err := entity.NewID(v)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return id
-}
-
-func ToBookmark(t *testing.T, iv, nv, uv string, tvs ...string) *entity.Bookmark {
-	t.Helper()
-	id, err := entity.NewID(iv)
-	if err != nil {
-		t.Fatal(err)
-	}
-	name, err := entity.NewName(nv)
-	if err != nil {
-		t.Fatal(err)
-	}
-	uri, err := entity.NewURI(uv)
-	if err != nil {
-		t.Fatal(err)
-	}
-	tags := make([]entity.Tag, len(tvs))
-	for i, tv := range tvs {
-		tag, err := entity.NewTag(tv)
-		if err != nil {
-			t.Fatal(err)
-		}
-		tags[i] = *tag
-	}
-	bookmark, err := entity.NewBookmark(id, name, uri, tags)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return bookmark
-}
-
-func ToBatch(t *testing.T, id, name, uri string, tags ...string) bson.D {
-	t.Helper()
-	a := bson.A{}
-	for _, tag := range tags {
-		a = append(a, tag)
-	}
-	bookmark := bson.D{
-		{Key: "_id", Value: id},
-		{Key: "name", Value: name},
-		{Key: "uri", Value: uri},
-		{Key: "tags", Value: a},
-	}
-	return bookmark
-}
 
 func TestNewBookmarkRepository(t *testing.T) {
 	t.Parallel()
@@ -126,7 +74,7 @@ func TestBookmark_Save(t *testing.T) {
 			func(mt *mtest.T) {
 				mt.AddMockResponses(mtest.CreateSuccessResponse())
 			},
-			ToBookmark(t, "1", "Example A", "https://foo.example.com"),
+			helper.ToBookmark(t, "1", "Example A", "https://foo.example.com"),
 			nil,
 		},
 		"nil bookmark": {
@@ -138,7 +86,7 @@ func TestBookmark_Save(t *testing.T) {
 			func(mt *mtest.T) {
 				mt.AddMockResponses(bson.D{{Key: "ok", Value: 0}})
 			},
-			ToBookmark(t, "1", "Example A", "https://foo.example.com"),
+			helper.ToBookmark(t, "1", "Example A", "https://foo.example.com"),
 			errors.New("failed at collection.UpdateByID: command failed"),
 		},
 	}
@@ -164,12 +112,12 @@ func TestBookmark_Save(t *testing.T) {
 
 func TestBookmark_FindAll(t *testing.T) {
 	t.Parallel()
-	batch1 := ToBatch(t, "1", "Example A", "https://foo.example.com")
-	batch2 := ToBatch(t, "2", "Example B", "https://bar.example.com")
-	batch3 := ToBatch(t, "3", "Example C", "https://baz.example.com")
-	bookmark1 := ToBookmark(t, "1", "Example A", "https://foo.example.com")
-	bookmark2 := ToBookmark(t, "2", "Example B", "https://bar.example.com")
-	bookmark3 := ToBookmark(t, "3", "Example C", "https://baz.example.com")
+	document1 := helper.ToBookmarkDocument(t, "1", "Example A", "https://foo.example.com")
+	document2 := helper.ToBookmarkDocument(t, "2", "Example B", "https://bar.example.com")
+	document3 := helper.ToBookmarkDocument(t, "3", "Example C", "https://baz.example.com")
+	bookmark1 := helper.ToBookmark(t, "1", "Example A", "https://foo.example.com")
+	bookmark2 := helper.ToBookmark(t, "2", "Example B", "https://bar.example.com")
+	bookmark3 := helper.ToBookmark(t, "3", "Example C", "https://baz.example.com")
 	mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock))
 	defer mt.Close()
 	cases := map[string]struct {
@@ -179,9 +127,9 @@ func TestBookmark_FindAll(t *testing.T) {
 	}{
 		"stored bookmarks": {
 			func(mt *mtest.T) {
-				mt.AddMockResponses(mtest.CreateCursorResponse(1, "foo.bar", mtest.FirstBatch, batch1))
-				mt.AddMockResponses(mtest.CreateCursorResponse(1, "foo.bar", mtest.NextBatch, batch2))
-				mt.AddMockResponses(mtest.CreateCursorResponse(1, "foo.bar", mtest.NextBatch, batch3))
+				mt.AddMockResponses(mtest.CreateCursorResponse(1, "foo.bar", mtest.FirstBatch, document1))
+				mt.AddMockResponses(mtest.CreateCursorResponse(1, "foo.bar", mtest.NextBatch, document2))
+				mt.AddMockResponses(mtest.CreateCursorResponse(1, "foo.bar", mtest.NextBatch, document3))
 				mt.AddMockResponses(mtest.CreateCursorResponse(0, "foo.bar", mtest.NextBatch))
 			},
 			[]entity.Bookmark{*bookmark1, *bookmark2, *bookmark3},
@@ -232,9 +180,9 @@ func TestBookmark_FindAll(t *testing.T) {
 
 func TestBookmark_FindByID(t *testing.T) {
 	t.Parallel()
-	batch := ToBatch(t, "1", "Example A", "https://foo.example.com")
-	id := ToID(t, "1")
-	bookmark := ToBookmark(t, "1", "Example A", "https://foo.example.com")
+	document := helper.ToBookmarkDocument(t, "1", "Example A", "https://foo.example.com")
+	id := helper.ToID(t, "1")
+	bookmark := helper.ToBookmark(t, "1", "Example A", "https://foo.example.com")
 	mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock))
 	defer mt.Close()
 	cases := map[string]struct {
@@ -245,7 +193,7 @@ func TestBookmark_FindByID(t *testing.T) {
 	}{
 		"stored bookmark": {
 			func(mt *mtest.T) {
-				mt.AddMockResponses(mtest.CreateCursorResponse(1, "foo.bar", mtest.FirstBatch, batch))
+				mt.AddMockResponses(mtest.CreateCursorResponse(1, "foo.bar", mtest.FirstBatch, document))
 			},
 			id,
 			bookmark,

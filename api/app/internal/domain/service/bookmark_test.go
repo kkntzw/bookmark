@@ -7,47 +7,10 @@ import (
 
 	"github.com/golang/mock/gomock"
 	"github.com/kkntzw/bookmark/internal/domain/entity"
+	"github.com/kkntzw/bookmark/test/helper"
 	mock_repository "github.com/kkntzw/bookmark/test/mock/domain/repository"
 	"github.com/stretchr/testify/assert"
 )
-
-func ToID(t *testing.T, v string) *entity.ID {
-	t.Helper()
-	id, err := entity.NewID(v)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return id
-}
-
-func ToBookmark(t *testing.T, iv, nv, uv string, tvs ...string) *entity.Bookmark {
-	t.Helper()
-	id, err := entity.NewID(iv)
-	if err != nil {
-		t.Fatal(err)
-	}
-	name, err := entity.NewName(nv)
-	if err != nil {
-		t.Fatal(err)
-	}
-	uri, err := entity.NewURI(uv)
-	if err != nil {
-		t.Fatal(err)
-	}
-	tags := make([]entity.Tag, len(tvs))
-	for i, tv := range tvs {
-		tag, err := entity.NewTag(tv)
-		if err != nil {
-			t.Fatal(err)
-		}
-		tags[i] = *tag
-	}
-	bookmark, err := entity.NewBookmark(id, name, uri, tags)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return bookmark
-}
 
 func TestNewBookmarkService(t *testing.T) {
 	t.Parallel()
@@ -83,8 +46,8 @@ func TestNewBookmarkService(t *testing.T) {
 
 func TestBookmark_Exists(t *testing.T) {
 	t.Parallel()
-	existingBookmark := ToBookmark(t, "1", "Example A", "https://foo.example.com")
-	nonExistingBookmark := ToBookmark(t, "2", "Example B", "https://bar.example.com")
+	existingBookmark := helper.ToBookmark(t, "1", "Example A", "https://foo.example.com")
+	nonExistingBookmark := helper.ToBookmark(t, "2", "Example B", "https://bar.example.com")
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	repository := mock_repository.NewMockBookmark(ctrl)
@@ -96,7 +59,7 @@ func TestBookmark_Exists(t *testing.T) {
 	}{
 		"existing bookmark": {
 			func() {
-				repository.EXPECT().FindByID(ToID(t, "1")).Return(existingBookmark, nil)
+				repository.EXPECT().FindByID(helper.ToID(t, "1")).Return(existingBookmark, nil)
 			},
 			existingBookmark,
 			true,
@@ -104,7 +67,7 @@ func TestBookmark_Exists(t *testing.T) {
 		},
 		"non-existing bookmark": {
 			func() {
-				repository.EXPECT().FindByID(ToID(t, "2")).Return(nil, nil)
+				repository.EXPECT().FindByID(helper.ToID(t, "2")).Return(nil, nil)
 			},
 			nonExistingBookmark,
 			false,
@@ -118,7 +81,7 @@ func TestBookmark_Exists(t *testing.T) {
 		},
 		"failed at repository.FindByID": {
 			func() {
-				repository.EXPECT().FindByID(ToID(t, "1")).Return(nil, errors.New("some error"))
+				repository.EXPECT().FindByID(helper.ToID(t, "1")).Return(nil, errors.New("some error"))
 			},
 			existingBookmark,
 			false,

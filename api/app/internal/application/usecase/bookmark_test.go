@@ -9,84 +9,11 @@ import (
 	"github.com/kkntzw/bookmark/internal/application/command"
 	"github.com/kkntzw/bookmark/internal/application/dto"
 	"github.com/kkntzw/bookmark/internal/domain/entity"
+	"github.com/kkntzw/bookmark/test/helper"
 	mock_repository "github.com/kkntzw/bookmark/test/mock/domain/repository"
 	mock_service "github.com/kkntzw/bookmark/test/mock/domain/service"
 	"github.com/stretchr/testify/assert"
 )
-
-func ToID(t *testing.T, v string) *entity.ID {
-	t.Helper()
-	id, err := entity.NewID(v)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return id
-}
-
-func ToErrID(t *testing.T, v string) error {
-	t.Helper()
-	_, err := entity.NewID(v)
-	if err == nil {
-		t.Fatal()
-	}
-	return err
-}
-
-func ToErrName(t *testing.T, v string) error {
-	t.Helper()
-	_, err := entity.NewName(v)
-	if err == nil {
-		t.Fatal()
-	}
-	return err
-}
-
-func ToErrURI(t *testing.T, v string) error {
-	t.Helper()
-	_, err := entity.NewURI(v)
-	if err == nil {
-		t.Fatal()
-	}
-	return err
-}
-
-func ToErrTag(t *testing.T, v string) error {
-	t.Helper()
-	_, err := entity.NewTag(v)
-	if err == nil {
-		t.Fatal()
-	}
-	return err
-}
-
-func ToBookmark(t *testing.T, iv, nv, uv string, tvs ...string) *entity.Bookmark {
-	t.Helper()
-	id, err := entity.NewID(iv)
-	if err != nil {
-		t.Fatal(err)
-	}
-	name, err := entity.NewName(nv)
-	if err != nil {
-		t.Fatal(err)
-	}
-	uri, err := entity.NewURI(uv)
-	if err != nil {
-		t.Fatal(err)
-	}
-	tags := make([]entity.Tag, len(tvs))
-	for i, tv := range tvs {
-		tag, err := entity.NewTag(tv)
-		if err != nil {
-			t.Fatal(err)
-		}
-		tags[i] = *tag
-	}
-	bookmark, err := entity.NewBookmark(id, name, uri, tags)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return bookmark
-}
 
 func TestNewBookmarkUsecase(t *testing.T) {
 	t.Parallel()
@@ -129,7 +56,7 @@ func TestNewBookmarkUsecase(t *testing.T) {
 
 func TestBookmark_Register(t *testing.T) {
 	t.Parallel()
-	bookmark := ToBookmark(t, "1", "Example A", "https://foo.example.com", "1-A", "1-B", "1-C")
+	bookmark := helper.ToBookmark(t, "1", "Example A", "https://foo.example.com", "1-A", "1-B", "1-C")
 	cmd := &command.RegisterBookmark{Name: "Example A", URI: "https://foo.example.com", Tags: []string{"1-A", "1-B", "1-C"}}
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -140,7 +67,7 @@ func TestBookmark_Register(t *testing.T) {
 	}{
 		"non-nil command": {
 			func(repository *mock_repository.MockBookmark, service *mock_service.MockBookmark) {
-				repository.EXPECT().NextID().Return(ToID(t, "1"))
+				repository.EXPECT().NextID().Return(helper.ToID(t, "1"))
 				repository.EXPECT().Save(bookmark).Return(nil)
 				service.EXPECT().Exists(bookmark).Return(false, nil)
 			},
@@ -155,11 +82,11 @@ func TestBookmark_Register(t *testing.T) {
 		"invalid command": {
 			func(repository *mock_repository.MockBookmark, service *mock_service.MockBookmark) {},
 			&command.RegisterBookmark{Name: "", URI: "", Tags: []string{""}},
-			&command.InvalidCommandError{Args: map[string]error{"Name": ToErrName(t, ""), "URI": ToErrURI(t, ""), "Tags": ToErrTag(t, "")}},
+			&command.InvalidCommandError{Args: map[string]error{"Name": helper.ToErrName(t, ""), "URI": helper.ToErrURI(t, ""), "Tags": helper.ToErrTag(t, "")}},
 		},
 		"duplicate bookmark": {
 			func(repository *mock_repository.MockBookmark, service *mock_service.MockBookmark) {
-				repository.EXPECT().NextID().Return(ToID(t, "1"))
+				repository.EXPECT().NextID().Return(helper.ToID(t, "1"))
 				service.EXPECT().Exists(bookmark).Return(true, nil)
 			},
 			cmd,
@@ -167,7 +94,7 @@ func TestBookmark_Register(t *testing.T) {
 		},
 		"failed at service.Exists": {
 			func(repository *mock_repository.MockBookmark, service *mock_service.MockBookmark) {
-				repository.EXPECT().NextID().Return(ToID(t, "1"))
+				repository.EXPECT().NextID().Return(helper.ToID(t, "1"))
 				service.EXPECT().Exists(bookmark).Return(false, errors.New("some error"))
 			},
 			cmd,
@@ -175,7 +102,7 @@ func TestBookmark_Register(t *testing.T) {
 		},
 		"failed at repository.Save": {
 			func(repository *mock_repository.MockBookmark, service *mock_service.MockBookmark) {
-				repository.EXPECT().NextID().Return(ToID(t, "1"))
+				repository.EXPECT().NextID().Return(helper.ToID(t, "1"))
 				repository.EXPECT().Save(bookmark).Return(errors.New("some error"))
 				service.EXPECT().Exists(bookmark).Return(false, nil)
 			},
@@ -212,9 +139,9 @@ func TestBookmark_List(t *testing.T) {
 		"3 bookmarks": {
 			func(repository *mock_repository.MockBookmark) {
 				repository.EXPECT().FindAll().Return([]entity.Bookmark{
-					*ToBookmark(t, "1", "Example A", "https://foo.example.com"),
-					*ToBookmark(t, "2", "Example B", "https://bar.example.com", "2-A"),
-					*ToBookmark(t, "3", "Example C", "https://baz.example.com", "3-A", "3-B"),
+					*helper.ToBookmark(t, "1", "Example A", "https://foo.example.com"),
+					*helper.ToBookmark(t, "2", "Example B", "https://bar.example.com", "2-A"),
+					*helper.ToBookmark(t, "3", "Example C", "https://baz.example.com", "3-A", "3-B"),
 				}, nil)
 			},
 			[]dto.Bookmark{
@@ -259,9 +186,9 @@ func TestBookmark_List(t *testing.T) {
 
 func TestBookmark_Update(t *testing.T) {
 	t.Parallel()
-	id := ToID(t, "1")
-	bookmark := ToBookmark(t, "1", "Example Foo", "https://foo.example.com", "1-A", "1-B", "1-C")
-	modifiedBookmark := ToBookmark(t, "1", "Example Bar", "https://foo.example.com/bar", "1-A", "1-B", "1-C")
+	id := helper.ToID(t, "1")
+	bookmark := helper.ToBookmark(t, "1", "Example Foo", "https://foo.example.com", "1-A", "1-B", "1-C")
+	modifiedBookmark := helper.ToBookmark(t, "1", "Example Bar", "https://foo.example.com/bar", "1-A", "1-B", "1-C")
 	cmd := &command.UpdateBookmark{ID: "1", Name: "Example Bar", URI: "https://foo.example.com/bar"}
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
@@ -286,7 +213,7 @@ func TestBookmark_Update(t *testing.T) {
 		"invalid command": {
 			func(repository *mock_repository.MockBookmark) {},
 			&command.UpdateBookmark{ID: "", Name: "", URI: ""},
-			&command.InvalidCommandError{Args: map[string]error{"ID": ToErrID(t, ""), "Name": ToErrName(t, ""), "URI": ToErrURI(t, "")}},
+			&command.InvalidCommandError{Args: map[string]error{"ID": helper.ToErrID(t, ""), "Name": helper.ToErrName(t, ""), "URI": helper.ToErrURI(t, "")}},
 		},
 		"non-existent bookmark": {
 			func(repository *mock_repository.MockBookmark) {

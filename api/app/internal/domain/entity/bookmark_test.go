@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func ToID(t *testing.T, v string) *ID {
+func toId(t *testing.T, v string) *ID {
 	t.Helper()
 	id, err := NewID(v)
 	if err != nil {
@@ -17,7 +17,7 @@ func ToID(t *testing.T, v string) *ID {
 	return id
 }
 
-func ToName(t *testing.T, v string) *Name {
+func toName(t *testing.T, v string) *Name {
 	t.Helper()
 	name, err := NewName(v)
 	if err != nil {
@@ -26,7 +26,7 @@ func ToName(t *testing.T, v string) *Name {
 	return name
 }
 
-func ToURI(t *testing.T, v string) *URI {
+func toUri(t *testing.T, v string) *URI {
 	t.Helper()
 	uri, err := NewURI(v)
 	if err != nil {
@@ -35,7 +35,7 @@ func ToURI(t *testing.T, v string) *URI {
 	return uri
 }
 
-func ToTags(t *testing.T, vs ...string) []Tag {
+func toTags(t *testing.T, vs ...string) []Tag {
 	t.Helper()
 	tags := make([]Tag, len(vs))
 	for i, v := range vs {
@@ -50,13 +50,13 @@ func ToTags(t *testing.T, vs ...string) []Tag {
 
 func TestNewBookmark(t *testing.T) {
 	t.Parallel()
-	id := ToID(t, "00a0c91e6bf6")
-	name := ToName(t, "Example")
-	uri := ToURI(t, "https://example.com")
-	zeroTags := ToTags(t)
-	oneTag := ToTags(t, "1-A")
-	twoTags := ToTags(t, "1-A", "1-B")
-	threeTags := ToTags(t, "1-A", "1-B", "1-C")
+	id := toId(t, "00a0c91e6bf6")
+	name := toName(t, "Example")
+	uri := toUri(t, "https://example.com")
+	zeroTags := toTags(t)
+	oneTag := toTags(t, "1-A")
+	twoTags := toTags(t, "1-A", "1-B")
+	threeTags := toTags(t, "1-A", "1-B", "1-C")
 	cases := map[string]struct {
 		id               *ID
 		name             *Name
@@ -104,10 +104,10 @@ func TestNewBookmark(t *testing.T) {
 
 func TestBookmark_ID(t *testing.T) {
 	t.Parallel()
-	id := ToID(t, "00a0c91e6bf6")
-	name := ToName(t, "Example")
-	uri := ToURI(t, "https://example.com")
-	tags := ToTags(t, "1-A", "1-B", "1-C")
+	id := toId(t, "00a0c91e6bf6")
+	name := toName(t, "Example")
+	uri := toUri(t, "https://example.com")
+	tags := toTags(t, "1-A", "1-B", "1-C")
 	// given
 	bookmark, _ := NewBookmark(id, name, uri, tags)
 	// when
@@ -119,10 +119,10 @@ func TestBookmark_ID(t *testing.T) {
 
 func TestBookmark_Name(t *testing.T) {
 	t.Parallel()
-	id := ToID(t, "00a0c91e6bf6")
-	name := ToName(t, "Example")
-	uri := ToURI(t, "https://example.com")
-	tags := ToTags(t, "1-A", "1-B", "1-C")
+	id := toId(t, "00a0c91e6bf6")
+	name := toName(t, "Example")
+	uri := toUri(t, "https://example.com")
+	tags := toTags(t, "1-A", "1-B", "1-C")
 	// given
 	bookmark, _ := NewBookmark(id, name, uri, tags)
 	// when
@@ -134,10 +134,10 @@ func TestBookmark_Name(t *testing.T) {
 
 func TestBookmark_URI(t *testing.T) {
 	t.Parallel()
-	id := ToID(t, "00a0c91e6bf6")
-	name := ToName(t, "Example")
-	uri := ToURI(t, "https://example.com")
-	tags := ToTags(t, "1-A", "1-B", "1-C")
+	id := toId(t, "00a0c91e6bf6")
+	name := toName(t, "Example")
+	uri := toUri(t, "https://example.com")
+	tags := toTags(t, "1-A", "1-B", "1-C")
 	// given
 	bookmark, _ := NewBookmark(id, name, uri, tags)
 	// when
@@ -149,10 +149,10 @@ func TestBookmark_URI(t *testing.T) {
 
 func TestBookmark_Tags(t *testing.T) {
 	t.Parallel()
-	id := ToID(t, "00a0c91e6bf6")
-	name := ToName(t, "Example")
-	uri := ToURI(t, "https://example.com")
-	tags := ToTags(t, "1-A", "1-B", "1-C")
+	id := toId(t, "00a0c91e6bf6")
+	name := toName(t, "Example")
+	uri := toUri(t, "https://example.com")
+	tags := toTags(t, "1-A", "1-B", "1-C")
 	{
 		t.Run("value", func(t *testing.T) {
 			t.Parallel()
@@ -184,11 +184,11 @@ func TestBookmark_Tags(t *testing.T) {
 
 func TestBookmark_Rename(t *testing.T) {
 	t.Parallel()
-	id := ToID(t, "00a0c91e6bf6")
-	oldName := ToName(t, "Example")
-	newName := ToName(t, "EXAMPLE")
-	uri := ToURI(t, "https://example.com")
-	tags := ToTags(t, "1-A", "1-B", "1-C")
+	id := toId(t, "00a0c91e6bf6")
+	oldName := toName(t, "Example")
+	newName := toName(t, "EXAMPLE")
+	uri := toUri(t, "https://example.com")
+	tags := toTags(t, "1-A", "1-B", "1-C")
 	cases := map[string]struct {
 		name         *Name
 		expectedName Name
@@ -215,11 +215,11 @@ func TestBookmark_Rename(t *testing.T) {
 
 func TestBookmark_RewriteURI(t *testing.T) {
 	t.Parallel()
-	id := ToID(t, "00a0c91e6bf6")
-	name := ToName(t, "Example")
-	oldUri := ToURI(t, "http://example.com")
-	newUri := ToURI(t, "https://example.com")
-	tags := ToTags(t, "1-A", "1-B", "1-C")
+	id := toId(t, "00a0c91e6bf6")
+	name := toName(t, "Example")
+	oldUri := toUri(t, "http://example.com")
+	newUri := toUri(t, "https://example.com")
+	tags := toTags(t, "1-A", "1-B", "1-C")
 	cases := map[string]struct {
 		uri         *URI
 		expectedUri URI
@@ -246,10 +246,10 @@ func TestBookmark_RewriteURI(t *testing.T) {
 
 func TestBookmark_DeepCopy(t *testing.T) {
 	t.Parallel()
-	id := ToID(t, "00a0c91e6bf6")
-	name := ToName(t, "Example")
-	uri := ToURI(t, "https://example.com")
-	tags := ToTags(t, "1-A", "1-B", "1-C")
+	id := toId(t, "00a0c91e6bf6")
+	name := toName(t, "Example")
+	uri := toUri(t, "https://example.com")
+	tags := toTags(t, "1-A", "1-B", "1-C")
 	{
 		t.Run("bookmark", func(t *testing.T) {
 			t.Parallel()

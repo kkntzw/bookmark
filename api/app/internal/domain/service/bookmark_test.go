@@ -16,10 +16,11 @@ func TestNewBookmarkService(t *testing.T) {
 	t.Parallel()
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	repository := mock_repository.NewMockBookmark(ctrl)
 	{
 		t.Run("implementing bookmark service", func(t *testing.T) {
 			t.Parallel()
+			// given
+			repository := mock_repository.NewMockBookmark(ctrl)
 			// when
 			object := NewBookmarkService(repository)
 			// then
@@ -32,6 +33,7 @@ func TestNewBookmarkService(t *testing.T) {
 		t.Run("fields", func(t *testing.T) {
 			t.Parallel()
 			// given
+			repository := mock_repository.NewMockBookmark(ctrl)
 			abstractService := NewBookmarkService(repository)
 			// when
 			concreteService, ok := abstractService.(*bookmarkService)
@@ -50,15 +52,14 @@ func TestBookmark_Exists(t *testing.T) {
 	nonExistingBookmark := helper.ToBookmark(t, "2", "Example B", "https://bar.example.com")
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	repository := mock_repository.NewMockBookmark(ctrl)
 	cases := map[string]struct {
-		prepare        func()
+		prepare        func(*mock_repository.MockBookmark)
 		bookmark       *entity.Bookmark
 		expectedExists bool
 		expectedErr    error
 	}{
 		"existing bookmark": {
-			func() {
+			func(repository *mock_repository.MockBookmark) {
 				repository.EXPECT().FindByID(helper.ToID(t, "1")).Return(existingBookmark, nil)
 			},
 			existingBookmark,
@@ -66,7 +67,7 @@ func TestBookmark_Exists(t *testing.T) {
 			nil,
 		},
 		"non-existing bookmark": {
-			func() {
+			func(repository *mock_repository.MockBookmark) {
 				repository.EXPECT().FindByID(helper.ToID(t, "2")).Return(nil, nil)
 			},
 			nonExistingBookmark,
@@ -74,13 +75,13 @@ func TestBookmark_Exists(t *testing.T) {
 			nil,
 		},
 		"nil bookmark": {
-			func() {},
+			func(repository *mock_repository.MockBookmark) {},
 			nil,
 			false,
 			errors.New("argument \"bookmark\" is nil"),
 		},
 		"failed at repository.FindByID": {
-			func() {
+			func(repository *mock_repository.MockBookmark) {
 				repository.EXPECT().FindByID(helper.ToID(t, "1")).Return(nil, errors.New("some error"))
 			},
 			existingBookmark,
@@ -92,7 +93,8 @@ func TestBookmark_Exists(t *testing.T) {
 		tc := tc
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			tc.prepare()
+			repository := mock_repository.NewMockBookmark(ctrl)
+			tc.prepare(repository)
 			// given
 			service := NewBookmarkService(repository)
 			// when

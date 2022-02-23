@@ -14,10 +14,26 @@ func TestNewTag(t *testing.T) {
 		expectedTag *Tag
 		expectedErr error
 	}{
-		"non-empty string":           {"Hello, 世界", &Tag{"Hello, 世界"}, nil},
-		"empty string":               {"", nil, errors.New("string length is 0")},
-		"contains control character": {"Hello,\u0000世界", nil, errors.New("contains control character: U+0000 (index: 6)")},
-		"blank string":               {" ", nil, errors.New("blank string")},
+		"non-empty string": {
+			"Hello, 世界",
+			&Tag{"Hello, 世界"},
+			nil,
+		},
+		"empty string": {
+			"",
+			nil,
+			errors.New("string length is 0"),
+		},
+		"contains control character": {
+			"Hello,\u0000世界",
+			nil,
+			errors.New("contains control character: U+0000 (index: 6)"),
+		},
+		"blank string": {
+			" ",
+			nil,
+			errors.New("blank string"),
+		},
 	}
 	for name, tc := range cases {
 		tc := tc
@@ -40,8 +56,18 @@ func TestTag_Equals(t *testing.T) {
 		expectedSame  bool
 		expectedEquiv bool
 	}{
-		"equivalent value":     {"Hello, 世界", "Hello, 世界", false, true},
-		"non-equivalent value": {"Hello, 世界", "Hello, World", false, false},
+		"equivalent value": {
+			"Hello, 世界",
+			"Hello, 世界",
+			false,
+			true,
+		},
+		"non-equivalent value": {
+			"Hello, 世界",
+			"Hello, World",
+			false,
+			false,
+		},
 	}
 	for name, tc := range cases {
 		tc := tc

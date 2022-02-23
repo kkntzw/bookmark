@@ -21,11 +21,11 @@ func TestInvalidCommandError_Error(t *testing.T) {
 			map[string]error{},
 			"command is invalid",
 		},
-		"one arg": {
+		"1 arg": {
 			map[string]error{"A": errors.New("some error")},
 			"command is invalid: [A: some error]",
 		},
-		"two args": {
+		"2 args": {
 			map[string]error{"A": errors.New("some error"), "B": errors.New("some error")},
 			"command is invalid: [A: some error, B: some error]",
 		},

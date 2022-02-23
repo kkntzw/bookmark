@@ -22,40 +22,34 @@ func TestNewBookmarkServer(t *testing.T) {
 	t.Parallel()
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	{
-		t.Run("implementing bookmark server", func(t *testing.T) {
-			t.Parallel()
-			// given
-			usecase := mock_usecase.NewMockBookmark(ctrl)
-			// when
-			object := NewBookmarkServer(usecase)
-			// then
-			assert.NotNil(t, object)
-			interfaceObject := (*pb.BookmarkerServer)(nil)
-			assert.Implements(t, interfaceObject, object)
-		})
-	}
-	{
-		t.Run("fields", func(t *testing.T) {
-			t.Parallel()
-			// given
-			usecase := mock_usecase.NewMockBookmark(ctrl)
-			abstractServer := NewBookmarkServer(usecase)
-			// when
-			concreteServer, ok := abstractServer.(*bookmarkServer)
-			actualUsecase := concreteServer.usecase
-			// then
-			assert.True(t, ok)
-			expectedUsecase := usecase
-			assert.Exactly(t, expectedUsecase, actualUsecase)
-		})
-	}
+	t.Run("implementing pb.BookmarkerServer", func(t *testing.T) {
+		t.Parallel()
+		// given
+		usecase := mock_usecase.NewMockBookmark(ctrl)
+		// when
+		object := NewBookmarkServer(usecase)
+		// then
+		assert.NotNil(t, object)
+		interfaceObject := (*pb.BookmarkerServer)(nil)
+		assert.Implements(t, interfaceObject, object)
+	})
+	t.Run("fields", func(t *testing.T) {
+		t.Parallel()
+		// given
+		usecase := mock_usecase.NewMockBookmark(ctrl)
+		abstractServer := NewBookmarkServer(usecase)
+		// when
+		concreteServer, ok := abstractServer.(*bookmarkServer)
+		actualUsecase := concreteServer.usecase
+		// then
+		assert.True(t, ok)
+		expectedUsecase := usecase
+		assert.Exactly(t, expectedUsecase, actualUsecase)
+	})
 }
 
 func TestBookmark_CreateBookmark(t *testing.T) {
 	t.Parallel()
-	cmd := &command.RegisterBookmark{Name: "Example A", URI: "https://foo.example.com", Tags: []string{"1-A", "1-B", "1-C"}}
-	req := helper.ToCreateBookmarkRequest(t, "Example A", "https://foo.example.com", "1-A", "1-B", "1-C")
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	cases := map[string]struct {
@@ -66,9 +60,12 @@ func TestBookmark_CreateBookmark(t *testing.T) {
 	}{
 		"non-nil request": {
 			func(usecase *mock_usecase.MockBookmark) {
-				usecase.EXPECT().Register(cmd).Return(nil)
+				usecase.
+					EXPECT().
+					Register(&command.RegisterBookmark{Name: "Example", URI: "https://example.com", Tags: []string{"foo", "bar", "baz"}}).
+					Return(nil)
 			},
-			req,
+			helper.ToCreateBookmarkRequest(t, "Example", "https://example.com", "foo", "bar", "baz"),
 			&emptypb.Empty{},
 			nil,
 		},
@@ -82,18 +79,21 @@ func TestBookmark_CreateBookmark(t *testing.T) {
 			func(usecase *mock_usecase.MockBookmark) {
 				usecase.
 					EXPECT().
-					Register(&command.RegisterBookmark{Name: "Example A", URI: "", Tags: []string{}}).
-					Return(&command.InvalidCommandError{Args: map[string]error{"URI": errors.New("some error")}})
+					Register(&command.RegisterBookmark{Name: "Example", URI: "https://example.com", Tags: []string{""}}).
+					Return(&command.InvalidCommandError{Args: map[string]error{"Tags": helper.ToErrTag(t, "")}})
 			},
-			helper.ToCreateBookmarkRequest(t, "Example A", ""),
+			helper.ToCreateBookmarkRequest(t, "Example", "https://example.com", ""),
 			nil,
 			status.Error(codes.InvalidArgument, "request is invalid"),
 		},
 		"failed at usecase.Register": {
 			func(usecase *mock_usecase.MockBookmark) {
-				usecase.EXPECT().Register(cmd).Return(errors.New("some error"))
+				usecase.
+					EXPECT().
+					Register(&command.RegisterBookmark{Name: "Example", URI: "https://example.com", Tags: []string{"foo", "bar", "baz"}}).
+					Return(errors.New("some error"))
 			},
-			req,
+			helper.ToCreateBookmarkRequest(t, "Example", "https://example.com", "foo", "bar", "baz"),
 			nil,
 			status.Error(codes.Internal, "server error"),
 		},
@@ -118,11 +118,6 @@ func TestBookmark_CreateBookmark(t *testing.T) {
 
 func TestBookmark_ListBookmarks(t *testing.T) {
 	t.Parallel()
-	bookmarks := []dto.Bookmark{
-		{ID: "1", Name: "Example A", URI: "https://foo.example.com", Tags: []string{}},
-		{ID: "2", Name: "Example B", URI: "https://bar.example.com", Tags: []string{"2-A"}},
-		{ID: "3", Name: "Example C", URI: "https://baz.example.com", Tags: []string{"3-A", "3-B"}},
-	}
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	cases := map[string]struct {
@@ -132,7 +127,14 @@ func TestBookmark_ListBookmarks(t *testing.T) {
 	}{
 		"non-nil request": {
 			func(usecase *mock_usecase.MockBookmark, stream *mock_pb.MockBookmarker_ListBookmarksServer) {
-				usecase.EXPECT().List().Return(bookmarks, nil)
+				usecase.EXPECT().List().Return(
+					[]dto.Bookmark{
+						{ID: "1", Name: "Example A", URI: "https://foo.example.com", Tags: []string{}},
+						{ID: "2", Name: "Example B", URI: "https://bar.example.com", Tags: []string{"2-A"}},
+						{ID: "3", Name: "Example C", URI: "https://baz.example.com", Tags: []string{"3-A", "3-B"}},
+					},
+					nil,
+				)
 				stream.EXPECT().Send(helper.ToBookmarkMessage(t, "1", "Example A", "https://foo.example.com")).Return(nil)
 				stream.EXPECT().Send(helper.ToBookmarkMessage(t, "2", "Example B", "https://bar.example.com", "2-A")).Return(nil)
 				stream.EXPECT().Send(helper.ToBookmarkMessage(t, "3", "Example C", "https://baz.example.com", "3-A", "3-B")).Return(nil)
@@ -154,7 +156,14 @@ func TestBookmark_ListBookmarks(t *testing.T) {
 		},
 		"failed at stream.Send": {
 			func(usecase *mock_usecase.MockBookmark, stream *mock_pb.MockBookmarker_ListBookmarksServer) {
-				usecase.EXPECT().List().Return(bookmarks, nil)
+				usecase.EXPECT().List().Return(
+					[]dto.Bookmark{
+						{ID: "1", Name: "Example A", URI: "https://foo.example.com", Tags: []string{}},
+						{ID: "2", Name: "Example B", URI: "https://bar.example.com", Tags: []string{"2-A"}},
+						{ID: "3", Name: "Example C", URI: "https://baz.example.com", Tags: []string{"3-A", "3-B"}},
+					},
+					nil,
+				)
 				stream.EXPECT().Send(helper.ToBookmarkMessage(t, "1", "Example A", "https://foo.example.com")).Return(nil)
 				stream.EXPECT().Send(helper.ToBookmarkMessage(t, "2", "Example B", "https://bar.example.com", "2-A")).Return(errors.New("some error"))
 			},
@@ -181,11 +190,6 @@ func TestBookmark_ListBookmarks(t *testing.T) {
 
 func TestBookmark_UpdateBookmark(t *testing.T) {
 	t.Parallel()
-	cmd := &command.UpdateBookmark{
-		ID:   "1",
-		Name: "Example Bar",
-		URI:  "https://foo.example.com/bar",
-	}
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	cases := map[string]struct {
@@ -196,9 +200,9 @@ func TestBookmark_UpdateBookmark(t *testing.T) {
 	}{
 		"non-nil request": {
 			func(usecase *mock_usecase.MockBookmark) {
-				usecase.EXPECT().Update(cmd).Return(nil)
+				usecase.EXPECT().Update(&command.UpdateBookmark{ID: "1", Name: "EXAMPLE", URI: "https://example.com"}).Return(nil)
 			},
-			helper.ToUpdateBookmarkRequest(t, "1", "Example Bar", "https://foo.example.com/bar"),
+			helper.ToUpdateBookmarkRequest(t, "1", "EXAMPLE", "https://example.com"),
 			&emptypb.Empty{},
 			nil,
 		},
@@ -210,17 +214,20 @@ func TestBookmark_UpdateBookmark(t *testing.T) {
 		},
 		"invalid request": {
 			func(usecase *mock_usecase.MockBookmark) {
-				usecase.EXPECT().Update(&command.UpdateBookmark{ID: "", Name: "", URI: ""}).Return(&command.InvalidCommandError{})
+				usecase.
+					EXPECT().
+					Update(&command.UpdateBookmark{ID: "1", Name: "EXAMPLE", URI: ""}).
+					Return(&command.InvalidCommandError{Args: map[string]error{"URI": helper.ToErrURI(t, "")}})
 			},
-			helper.ToUpdateBookmarkRequest(t, "", "", ""),
+			helper.ToUpdateBookmarkRequest(t, "1", "EXAMPLE", ""),
 			nil,
 			status.Error(codes.InvalidArgument, "request is invalid"),
 		},
 		"failed at usecase.Update": {
 			func(usecase *mock_usecase.MockBookmark) {
-				usecase.EXPECT().Update(cmd).Return(errors.New("some error"))
+				usecase.EXPECT().Update(&command.UpdateBookmark{ID: "1", Name: "EXAMPLE", URI: "https://example.com"}).Return(errors.New("some error"))
 			},
-			helper.ToUpdateBookmarkRequest(t, "1", "Example Bar", "https://foo.example.com/bar"),
+			helper.ToUpdateBookmarkRequest(t, "1", "EXAMPLE", "https://example.com"),
 			nil,
 			status.Error(codes.Internal, "server error"),
 		},

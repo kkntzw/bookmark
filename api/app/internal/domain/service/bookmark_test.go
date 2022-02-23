@@ -16,40 +16,34 @@ func TestNewBookmarkService(t *testing.T) {
 	t.Parallel()
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
-	{
-		t.Run("implementing bookmark service", func(t *testing.T) {
-			t.Parallel()
-			// given
-			repository := mock_repository.NewMockBookmark(ctrl)
-			// when
-			object := NewBookmarkService(repository)
-			// then
-			assert.NotNil(t, object)
-			interfaceObject := (*Bookmark)(nil)
-			assert.Implements(t, interfaceObject, object)
-		})
-	}
-	{
-		t.Run("fields", func(t *testing.T) {
-			t.Parallel()
-			// given
-			repository := mock_repository.NewMockBookmark(ctrl)
-			abstractService := NewBookmarkService(repository)
-			// when
-			concreteService, ok := abstractService.(*bookmarkService)
-			actualRepository := concreteService.repository
-			// then
-			assert.True(t, ok)
-			expectedRepository := repository
-			assert.Exactly(t, expectedRepository, actualRepository)
-		})
-	}
+	t.Run("implementing service.Bookmark", func(t *testing.T) {
+		t.Parallel()
+		// given
+		repository := mock_repository.NewMockBookmark(ctrl)
+		// when
+		object := NewBookmarkService(repository)
+		// then
+		assert.NotNil(t, object)
+		interfaceObject := (*Bookmark)(nil)
+		assert.Implements(t, interfaceObject, object)
+	})
+	t.Run("fields", func(t *testing.T) {
+		t.Parallel()
+		// given
+		repository := mock_repository.NewMockBookmark(ctrl)
+		abstractService := NewBookmarkService(repository)
+		// when
+		concreteService, ok := abstractService.(*bookmarkService)
+		actualRepository := concreteService.repository
+		// then
+		assert.True(t, ok)
+		expectedRepository := repository
+		assert.Exactly(t, expectedRepository, actualRepository)
+	})
 }
 
 func TestBookmark_Exists(t *testing.T) {
 	t.Parallel()
-	existingBookmark := helper.ToBookmark(t, "1", "Example A", "https://foo.example.com")
-	nonExistingBookmark := helper.ToBookmark(t, "2", "Example B", "https://bar.example.com")
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()
 	cases := map[string]struct {
@@ -60,17 +54,17 @@ func TestBookmark_Exists(t *testing.T) {
 	}{
 		"existing bookmark": {
 			func(repository *mock_repository.MockBookmark) {
-				repository.EXPECT().FindByID(helper.ToID(t, "1")).Return(existingBookmark, nil)
+				repository.EXPECT().FindByID(helper.ToID(t, "1")).Return(helper.ToBookmark(t, "1", "Example", "https://example.com"), nil)
 			},
-			existingBookmark,
+			helper.ToBookmark(t, "1", "Example", "https://example.com"),
 			true,
 			nil,
 		},
 		"non-existing bookmark": {
 			func(repository *mock_repository.MockBookmark) {
-				repository.EXPECT().FindByID(helper.ToID(t, "2")).Return(nil, nil)
+				repository.EXPECT().FindByID(helper.ToID(t, "1")).Return(nil, nil)
 			},
-			nonExistingBookmark,
+			helper.ToBookmark(t, "1", "Example", "https://example.com"),
 			false,
 			nil,
 		},
@@ -84,7 +78,7 @@ func TestBookmark_Exists(t *testing.T) {
 			func(repository *mock_repository.MockBookmark) {
 				repository.EXPECT().FindByID(helper.ToID(t, "1")).Return(nil, errors.New("some error"))
 			},
-			existingBookmark,
+			helper.ToBookmark(t, "1", "Example", "https://example.com"),
 			false,
 			fmt.Errorf("failed at repository.FindByID: %w", errors.New("some error")),
 		},

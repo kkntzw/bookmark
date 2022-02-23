@@ -17,32 +17,32 @@ func TestRegisterBookmark_Validate(t *testing.T) {
 			&RegisterBookmark{"Example", "https://example.com", nil},
 			nil,
 		},
-		"valid arguments (0 tags)": {
+		"valid arguments (empty tags)": {
 			&RegisterBookmark{"Example", "https://example.com", []string{}},
 			nil,
 		},
 		"valid arguments (1 tag)": {
-			&RegisterBookmark{"Example", "https://example.com", []string{"1-A"}},
+			&RegisterBookmark{"Example", "https://example.com", []string{"foo"}},
 			nil,
 		},
 		"valid arguments (2 tags)": {
-			&RegisterBookmark{"Example", "https://example.com", []string{"1-A", "1-B"}},
+			&RegisterBookmark{"Example", "https://example.com", []string{"foo", "bar"}},
 			nil,
 		},
 		"valid arguments (3 tags)": {
-			&RegisterBookmark{"Example", "https://example.com", []string{"1-A", "1-B", "1-C"}},
+			&RegisterBookmark{"Example", "https://example.com", []string{"foo", "bar", "baz"}},
 			nil,
 		},
 		"invalid name": {
-			&RegisterBookmark{"", "https://example.com", []string{"1-A", "1-B", "1-C"}},
+			&RegisterBookmark{"", "https://example.com", []string{"foo", "bar", "baz"}},
 			&InvalidCommandError{map[string]error{"Name": helper.ToErrName(t, "")}},
 		},
 		"invalid uri": {
-			&RegisterBookmark{"Example", "", []string{"1-A", "1-B", "1-C"}},
+			&RegisterBookmark{"Example", "", []string{"foo", "bar", "baz"}},
 			&InvalidCommandError{map[string]error{"URI": helper.ToErrURI(t, "")}},
 		},
 		"invalid tags": {
-			&RegisterBookmark{"Example", "https://example.com", []string{"1-A", "", "1-C"}},
+			&RegisterBookmark{"Example", "https://example.com", []string{"foo", "", "baz"}},
 			&InvalidCommandError{map[string]error{"Tags": helper.ToErrTag(t, "")}},
 		},
 		"invalid arguments": {

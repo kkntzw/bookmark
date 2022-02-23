@@ -62,8 +62,18 @@ func TestURI_Equals(t *testing.T) {
 		expectedSame  bool
 		expectedEquiv bool
 	}{
-		"equivalent value":     {"https://example.com", "https://example.com", false, true},
-		"non-equivalent value": {"https://example.com", "http://example.com", false, false},
+		"equivalent value": {
+			"https://example.com",
+			"https://example.com",
+			false,
+			true,
+		},
+		"non-equivalent value": {
+			"https://example.com",
+			"http://example.com",
+			false,
+			false,
+		},
 	}
 	for name, tc := range cases {
 		tc := tc

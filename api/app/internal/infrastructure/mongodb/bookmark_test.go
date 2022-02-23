@@ -16,34 +16,30 @@ func TestNewBookmarkRepository(t *testing.T) {
 	t.Parallel()
 	mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock))
 	defer mt.Close()
-	{
-		mt.Run("implementing bookmark repository", func(mt *mtest.T) {
-			mt.Parallel()
-			// given
-			collection := mt.Coll
-			// when
-			object := NewBookmarkRepository(collection)
-			// then
-			assert.NotNil(mt, object)
-			interfaceObject := (*repository.Bookmark)(nil)
-			assert.Implements(mt, interfaceObject, object)
-		})
-	}
-	{
-		mt.Run("fields", func(mt *mtest.T) {
-			mt.Parallel()
-			// given
-			collection := mt.Coll
-			abstractRepository := NewBookmarkRepository(collection)
-			// when
-			concreteRepository, ok := abstractRepository.(*bookmarkRepository)
-			actualCollection := concreteRepository.collection
-			// then
-			assert.True(mt, ok)
-			expectedCollection := collection
-			assert.Exactly(mt, expectedCollection, actualCollection)
-		})
-	}
+	mt.Run("implementing repository.Bookmark", func(mt *mtest.T) {
+		mt.Parallel()
+		// given
+		collection := mt.Coll
+		// when
+		object := NewBookmarkRepository(collection)
+		// then
+		assert.NotNil(mt, object)
+		interfaceObject := (*repository.Bookmark)(nil)
+		assert.Implements(mt, interfaceObject, object)
+	})
+	mt.Run("fields", func(mt *mtest.T) {
+		mt.Parallel()
+		// given
+		collection := mt.Coll
+		abstractRepository := NewBookmarkRepository(collection)
+		// when
+		concreteRepository, ok := abstractRepository.(*bookmarkRepository)
+		actualCollection := concreteRepository.collection
+		// then
+		assert.True(mt, ok)
+		expectedCollection := collection
+		assert.Exactly(mt, expectedCollection, actualCollection)
+	})
 }
 
 func TestBookmark_NextID(t *testing.T) {
@@ -74,7 +70,7 @@ func TestBookmark_Save(t *testing.T) {
 			func(mt *mtest.T) {
 				mt.AddMockResponses(mtest.CreateSuccessResponse())
 			},
-			helper.ToBookmark(t, "1", "Example A", "https://foo.example.com"),
+			helper.ToBookmark(t, "1", "Example", "https://example.com", "foo", "bar", "baz"),
 			nil,
 		},
 		"nil bookmark": {
@@ -86,7 +82,7 @@ func TestBookmark_Save(t *testing.T) {
 			func(mt *mtest.T) {
 				mt.AddMockResponses(bson.D{{Key: "ok", Value: 0}})
 			},
-			helper.ToBookmark(t, "1", "Example A", "https://foo.example.com"),
+			helper.ToBookmark(t, "1", "Example", "https://example.com", "foo", "bar", "baz"),
 			errors.New("failed at collection.UpdateByID: command failed"),
 		},
 	}
@@ -112,12 +108,6 @@ func TestBookmark_Save(t *testing.T) {
 
 func TestBookmark_FindAll(t *testing.T) {
 	t.Parallel()
-	document1 := helper.ToBookmarkDocument(t, "1", "Example A", "https://foo.example.com")
-	document2 := helper.ToBookmarkDocument(t, "2", "Example B", "https://bar.example.com")
-	document3 := helper.ToBookmarkDocument(t, "3", "Example C", "https://baz.example.com")
-	bookmark1 := helper.ToBookmark(t, "1", "Example A", "https://foo.example.com")
-	bookmark2 := helper.ToBookmark(t, "2", "Example B", "https://bar.example.com")
-	bookmark3 := helper.ToBookmark(t, "3", "Example C", "https://baz.example.com")
 	mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock))
 	defer mt.Close()
 	cases := map[string]struct {
@@ -127,12 +117,24 @@ func TestBookmark_FindAll(t *testing.T) {
 	}{
 		"stored bookmarks": {
 			func(mt *mtest.T) {
-				mt.AddMockResponses(mtest.CreateCursorResponse(1, "foo.bar", mtest.FirstBatch, document1))
-				mt.AddMockResponses(mtest.CreateCursorResponse(1, "foo.bar", mtest.NextBatch, document2))
-				mt.AddMockResponses(mtest.CreateCursorResponse(1, "foo.bar", mtest.NextBatch, document3))
-				mt.AddMockResponses(mtest.CreateCursorResponse(0, "foo.bar", mtest.NextBatch))
+				mt.AddMockResponses(
+					mtest.CreateCursorResponse(1, "foo.bar", mtest.FirstBatch, helper.ToBookmarkDocument(t, "1", "Example A", "https://foo.example.com")),
+				)
+				mt.AddMockResponses(
+					mtest.CreateCursorResponse(1, "foo.bar", mtest.NextBatch, helper.ToBookmarkDocument(t, "2", "Example B", "https://bar.example.com")),
+				)
+				mt.AddMockResponses(
+					mtest.CreateCursorResponse(1, "foo.bar", mtest.NextBatch, helper.ToBookmarkDocument(t, "3", "Example C", "https://baz.example.com")),
+				)
+				mt.AddMockResponses(
+					mtest.CreateCursorResponse(0, "foo.bar", mtest.NextBatch),
+				)
 			},
-			[]entity.Bookmark{*bookmark1, *bookmark2, *bookmark3},
+			[]entity.Bookmark{
+				*helper.ToBookmark(t, "1", "Example A", "https://foo.example.com"),
+				*helper.ToBookmark(t, "2", "Example B", "https://bar.example.com"),
+				*helper.ToBookmark(t, "3", "Example C", "https://baz.example.com"),
+			},
 			nil,
 		},
 		"unstored bookmarks": {
@@ -180,9 +182,6 @@ func TestBookmark_FindAll(t *testing.T) {
 
 func TestBookmark_FindByID(t *testing.T) {
 	t.Parallel()
-	document := helper.ToBookmarkDocument(t, "1", "Example A", "https://foo.example.com")
-	id := helper.ToID(t, "1")
-	bookmark := helper.ToBookmark(t, "1", "Example A", "https://foo.example.com")
 	mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock))
 	defer mt.Close()
 	cases := map[string]struct {
@@ -191,19 +190,21 @@ func TestBookmark_FindByID(t *testing.T) {
 		expectedBookmark *entity.Bookmark
 		expectedErr      error
 	}{
-		"stored bookmark": {
+		"id of stored bookmark": {
 			func(mt *mtest.T) {
-				mt.AddMockResponses(mtest.CreateCursorResponse(1, "foo.bar", mtest.FirstBatch, document))
+				mt.AddMockResponses(
+					mtest.CreateCursorResponse(1, "foo.bar", mtest.FirstBatch, helper.ToBookmarkDocument(t, "1", "Example", "https://example.com")),
+				)
 			},
-			id,
-			bookmark,
+			helper.ToID(t, "1"),
+			helper.ToBookmark(t, "1", "Example", "https://example.com"),
 			nil,
 		},
-		"unstored bookmark": {
+		"id of unstored bookmark": {
 			func(mt *mtest.T) {
 				mt.AddMockResponses(mtest.CreateCursorResponse(1, "foo.bar", mtest.FirstBatch, bson.D{}))
 			},
-			id,
+			helper.ToID(t, "1"),
 			nil,
 			nil,
 		},
@@ -217,7 +218,7 @@ func TestBookmark_FindByID(t *testing.T) {
 			func(mt *mtest.T) {
 				mt.AddMockResponses(bson.D{{Key: "ok", Value: 0}})
 			},
-			id,
+			helper.ToID(t, "1"),
 			nil,
 			errors.New("failed at collection.FindOne: command failed"),
 		},

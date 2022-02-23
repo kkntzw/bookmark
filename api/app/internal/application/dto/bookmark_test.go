@@ -3,17 +3,34 @@ package dto
 import (
 	"testing"
 
+	"github.com/kkntzw/bookmark/internal/domain/entity"
 	"github.com/kkntzw/bookmark/test/helper"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestNewBookmark(t *testing.T) {
 	t.Parallel()
-	// given
-	entity := helper.ToBookmark(t, "1", "Example", "https://example.com", "1-A", "1-B", "1-C")
-	// when
-	actualBookmark := NewBookmark(*entity)
-	// then
-	expectedBookmark := Bookmark{"1", "Example", "https://example.com", []string{"1-A", "1-B", "1-C"}}
-	assert.Exactly(t, expectedBookmark, actualBookmark)
+	cases := map[string]struct {
+		entity           entity.Bookmark
+		expectedBookmark Bookmark
+	}{
+		"valid entity (empty tags)": {
+			*helper.ToBookmark(t, "1", "Example", "https://example.com"),
+			Bookmark{"1", "Example", "https://example.com", []string{}},
+		},
+		"valid entity (3 tags)": {
+			*helper.ToBookmark(t, "1", "Example", "https://example.com", "foo", "bar", "baz"),
+			Bookmark{"1", "Example", "https://example.com", []string{"foo", "bar", "baz"}},
+		},
+	}
+	for name, tc := range cases {
+		tc := tc
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			// when
+			actualBookmark := NewBookmark(tc.entity)
+			// then
+			assert.Exactly(t, tc.expectedBookmark, actualBookmark)
+		})
+	}
 }

@@ -11,10 +11,6 @@ type Name struct {
 }
 
 // ブックマーク名を検証する。
-//
-// 文字列長が0の場合はエラーを返却する。
-// 制御文字を含む場合はエラーを返却する。
-// 空白以外の文字を含まない場合はエラーを返却する。
 func validateName(s string) error {
 	if len(s) == 0 {
 		return fmt.Errorf("string length is 0")
@@ -36,7 +32,9 @@ func validateName(s string) error {
 
 // ブックマーク名を表す値オブジェクトを生成する。
 //
-// 不正な値を指定した場合はエラーを返却する。
+// 文字列長が0の場合はエラーを返却する。
+// 制御文字を含む場合はエラーを返却する。
+// 空白以外の文字を含まない場合はエラーを返却する。
 func NewName(v string) (*Name, error) {
 	if err := validateName(v); err != nil {
 		return nil, err

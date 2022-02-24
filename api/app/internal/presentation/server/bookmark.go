@@ -27,9 +27,10 @@ func NewBookmarkServer(usecase usecase.Bookmark) pb.BookmarkerServer {
 
 // ブックマークを作成する。
 //
-// 作成に成功した場合は OK を返却する。
-// 無効な引数を指定した場合は INVALID_ARGUMENT を返却する。
-// サーバエラーが発生した場合は INTERNAL を返却する。
+// ブックマークの作成に成功した場合は OK を返却する。
+// nilを指定した場合は INVALID_ARGUMENT を返却する。
+// 不正なリクエストを指定した場合は INVALID_ARGUMENT を返却する。
+// ブックマークの作成に失敗した場合は INTERNAL を返却する。
 func (s *bookmarkServer) CreateBookmark(ctx context.Context, req *pb.CreateBookmarkRequest) (*emptypb.Empty, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "argument \"req\" is nil")
@@ -54,10 +55,10 @@ func (s *bookmarkServer) CreateBookmark(ctx context.Context, req *pb.CreateBookm
 
 // ブックマークを一覧取得する。
 //
-// 一覧取得に成功した場合は OK を返却する。
-// 無効な引数を指定した場合は INVALID_ARGUMENT を返却する。
-// サーバエラーが発生した場合は INTERNAL を返却する。
-// ストリームに失敗した場合は INTERNAL を返却する。
+// ブックマークの一覧取得に成功した場合は OK を返却する。
+// nilを指定した場合は INVALID_ARGUMENT を返却する。
+// ブックマークの一覧取得に失敗した場合は INTERNAL を返却する。
+// ストリームの送信に失敗した場合は INTERNAL を返却する。
 func (s *bookmarkServer) ListBookmarks(req *emptypb.Empty, stream pb.Bookmarker_ListBookmarksServer) error {
 	if req == nil {
 		return status.Error(codes.InvalidArgument, "argument \"req\" is nil")
@@ -86,9 +87,10 @@ func (s *bookmarkServer) ListBookmarks(req *emptypb.Empty, stream pb.Bookmarker_
 
 // ブックマークを更新する。
 //
-// 更新に成功した場合は OK を返却する。
-// 無効な引数を指定した場合は INVALID_ARGUMENT を返却する。
-// サーバエラーが発生した場合は INTERNAL を返却する。
+// ブックマークの更新に成功した場合は OK を返却する。
+// nilを指定した場合は INVALID_ARGUMENT を返却する。
+// 不正なリクエストを指定した場合は INVALID_ARGUMENT を返却する。
+// ブックマークの更新に失敗した場合は INTERNAL を返却する。
 func (s *bookmarkServer) UpdateBookmark(ctx context.Context, req *pb.UpdateBookmarkRequest) (*emptypb.Empty, error) {
 	if req == nil {
 		return nil, status.Error(codes.InvalidArgument, "argument \"req\" is nil")

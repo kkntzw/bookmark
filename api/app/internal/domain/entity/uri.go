@@ -12,10 +12,6 @@ type URI struct {
 }
 
 // URIを検証する。
-//
-// 文字列長が0の場合はエラーを返却する。
-// 制御文字を含む場合はエラーを返却する。
-// 空白以外の文字を含まない場合はエラーを返却する。
 func validateURI(s string) error {
 	if len(s) == 0 {
 		return fmt.Errorf("string length is 0")
@@ -37,7 +33,9 @@ func validateURI(s string) error {
 
 // URIを表す値オブジェクトを生成する。
 //
-// 不正な値を指定した場合はエラーを返却する。
+// 文字列長が0の場合はエラーを返却する。
+// 制御文字を含む場合はエラーを返却する。
+// 空白以外の文字を含まない場合はエラーを返却する。
 // URIの解析に失敗した場合はエラーを返却する。
 func NewURI(v string) (*URI, error) {
 	if err := validateURI(v); err != nil {

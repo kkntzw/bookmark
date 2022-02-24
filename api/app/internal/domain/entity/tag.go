@@ -11,10 +11,6 @@ type Tag struct {
 }
 
 // タグを検証する。
-//
-// 文字列長が0の場合はエラーを返却する。
-// 制御文字を含む場合はエラーを返却する。
-// 空白以外の文字を含まない場合はエラーを返却する。
 func validateTag(s string) error {
 	if len(s) == 0 {
 		return fmt.Errorf("string length is 0")
@@ -36,7 +32,9 @@ func validateTag(s string) error {
 
 // タグを表す値オブジェクトを生成する。
 //
-// 不正な値を指定した場合はエラーを返却する。
+// 文字列長が0の場合はエラーを返却する。
+// 制御文字を含む場合はエラーを返却する。
+// 空白以外の文字を含まない場合はエラーを返却する。
 func NewTag(v string) (*Tag, error) {
 	if err := validateTag(v); err != nil {
 		return nil, err

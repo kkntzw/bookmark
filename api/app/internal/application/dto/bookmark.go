@@ -12,7 +12,7 @@ type Bookmark struct {
 	Tags []string // タグ一覧
 }
 
-// ブックマークを表すDTOを生成する。
+// ブックマークを表すエンティティからDTOを生成する。
 func NewBookmark(entity entity.Bookmark) Bookmark {
 	id := entity.ID()
 	name := entity.Name()

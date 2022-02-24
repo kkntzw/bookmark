@@ -12,9 +12,6 @@ type ID struct {
 // IDを検証する。
 //
 // RegExp: `^[-0-9A-Za-z]+$`
-//
-// 文字列長が0の場合はエラーを返却する。
-// ハイフン、半角数字、半角英字(\u002D\u0030-\u0039\u0041-\u005A\u0061-\u007A)以外の文字を含む場合はエラーを返却する。
 func validateID(s string) error {
 	if len(s) == 0 {
 		return fmt.Errorf("string length is 0")
@@ -29,7 +26,8 @@ func validateID(s string) error {
 
 // IDを表す値オブジェクトを生成する。
 //
-// 不正な値を指定した場合はエラーを返却する。
+// 文字列長が0の場合はエラーを返却する。
+// ハイフン、半角英数字以外の文字を含む場合はエラーを返却する。
 func NewID(v string) (*ID, error) {
 	if err := validateID(v); err != nil {
 		return nil, err

@@ -1,6 +1,9 @@
 package entity
 
-import "fmt"
+import (
+	"fmt"
+	"unicode"
+)
 
 // ブックマーク名を表す値オブジェクト。
 type Name struct {
@@ -8,20 +11,16 @@ type Name struct {
 }
 
 // ブックマーク名を検証する。
-//
-// 文字列長が0の場合はエラーを返却する。
-// 制御文字(\u0000-\u001F\u007F)を含む場合はエラーを返却する。
-// 空白(\u0020\u0085\u00A0)以外の文字を含まない場合はエラーを返却する。
 func validateName(s string) error {
 	if len(s) == 0 {
 		return fmt.Errorf("string length is 0")
 	}
 	blank := true
 	for i, r := range s {
-		if ('\u0000' <= r && r <= '\u001F') || (r == '\u007F') {
+		if unicode.IsControl(r) {
 			return fmt.Errorf("contains control character: %U (index: %d)", r, i)
 		}
-		if (r != '\u0020') && (r != '\u0085') && (r != '\u00A0') {
+		if !unicode.IsSpace(r) {
 			blank = false
 		}
 	}
@@ -33,7 +32,9 @@ func validateName(s string) error {
 
 // ブックマーク名を表す値オブジェクトを生成する。
 //
-// 不正な値を指定した場合はエラーを返却する。
+// 文字列長が0の場合はエラーを返却する。
+// 制御文字を含む場合はエラーを返却する。
+// 空白以外の文字を含まない場合はエラーを返却する。
 func NewName(v string) (*Name, error) {
 	if err := validateName(v); err != nil {
 		return nil, err

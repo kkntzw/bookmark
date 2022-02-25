@@ -1,85 +1,98 @@
 package entity
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewName_正当な値を受け取るとName型のインスタンスを返却する(t *testing.T) {
-	params := []struct {
-		v        string
-		expected *Name
+func TestNewName(t *testing.T) {
+	t.Parallel()
+	cases := map[string]struct {
+		v            string
+		expectedName *Name
+		expectedErr  error
 	}{
-		{v: "EXAMPLE 0", expected: &Name{"EXAMPLE 0"}},
-		{v: "example 9", expected: &Name{"example 9"}},
-		{v: "れい　０", expected: &Name{"れい　０"}},
-		{v: "レイ　９", expected: &Name{"レイ　９"}},
-		{v: "例", expected: &Name{"例"}},
+		"non-empty string": {
+			"Hello, 世界",
+			&Name{"Hello, 世界"},
+			nil,
+		},
+		"empty string": {
+			"",
+			nil,
+			errors.New("string length is 0"),
+		},
+		"contains control character": {
+			"Hello,\u0000世界",
+			nil,
+			errors.New("contains control character: U+0000 (index: 6)"),
+		},
+		"blank string": {
+			" ",
+			nil,
+			errors.New("blank string"),
+		},
 	}
-	for _, p := range params {
-		// given
-		v := p.v
-		// when
-		actual, err := NewName(v)
-		// then
-		assert.Exactly(t, p.expected, actual)
-		assert.NoError(t, err)
+	for name, tc := range cases {
+		tc := tc
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			// when
+			actualName, actualErr := NewName(tc.v)
+			// then
+			assert.Exactly(t, tc.expectedName, actualName)
+			assert.Exactly(t, tc.expectedErr, actualErr)
+		})
 	}
 }
 
-func TestNewName_不正な値を受け取るとエラーを返却する(t *testing.T) {
-	params := []struct {
-		v         string
-		errString string
+func TestName_Equals(t *testing.T) {
+	t.Parallel()
+	cases := map[string]struct {
+		xv            string
+		yv            string
+		expectedSame  bool
+		expectedEquiv bool
 	}{
-		{v: "", errString: "string length is 0"},
-		{v: "\u0000", errString: "contains control character: U+0000 (index: 0)"},
-		{v: "\u001F", errString: "contains control character: U+001F (index: 0)"},
-		{v: "\u007F", errString: "contains control character: U+007F (index: 0)"},
-		{v: "\u0020\u0085\u00A0", errString: "blank string"},
+		"equivalent value": {
+			"Hello, 世界",
+			"Hello, 世界",
+			false,
+			true,
+		},
+		"non-equivalent value": {
+			"Hello, 世界",
+			"Hello, World",
+			false,
+			false,
+		},
 	}
-	for _, p := range params {
-		// given
-		v := p.v
-		// when
-		object, err := NewName(v)
-		// then
-		assert.Nil(t, object)
-		assert.EqualError(t, err, p.errString)
+	for name, tc := range cases {
+		tc := tc
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			// given
+			x, _ := NewName(tc.xv)
+			y, _ := NewName(tc.yv)
+			// when
+			actualSame := x == y
+			actualEquiv := *x == *y
+			// then
+			assert.Exactly(t, tc.expectedSame, actualSame)
+			assert.Exactly(t, tc.expectedEquiv, actualEquiv)
+		})
 	}
 }
 
-func TestEquals_同じ値を持つName型のインスタンスは等しい(t *testing.T) {
+func TestName_Value(t *testing.T) {
+	t.Parallel()
 	// given
-	x, _ := NewName("example")
-	y, _ := NewName("example")
+	name, _ := NewName("Hello, 世界")
 	// when
-	same := x == y
-	equiv := *x == *y
+	actualValue := name.Value()
 	// then
-	assert.False(t, same)
-	assert.True(t, equiv)
-}
-
-func TestEquals_異なる値を持つName型のインスタンスは等しくない(t *testing.T) {
-	// given
-	x, _ := NewName("example")
-	y, _ := NewName("Example")
-	// when
-	same := x == y
-	equiv := *x == *y
-	// then
-	assert.False(t, same)
-	assert.False(t, equiv)
-}
-
-func TestValue_Name型から値を取得する(t *testing.T) {
-	// given
-	name, _ := NewName("example")
-	// when
-	actual := name.Value()
-	// then
-	expected := "example"
-	assert.Exactly(t, expected, actual)
+	expectedValue := "Hello, 世界"
+	assert.Exactly(t, expectedValue, actualValue)
 }

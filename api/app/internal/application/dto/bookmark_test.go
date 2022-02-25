@@ -3,21 +3,34 @@ package dto
 import (
 	"testing"
 
-	sample_entity "github.com/kkntzw/bookmark/test/data/domain/entity"
+	"github.com/kkntzw/bookmark/internal/domain/entity"
+	"github.com/kkntzw/bookmark/test/helper"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewBookmark_Bookmark型のインスタンスを返却する(t *testing.T) {
-	// given
-	entity := sample_entity.Bookmark()
-	// when
-	actual := NewBookmark(*entity)
-	// then
-	expected := Bookmark{
-		ID:   "f81d4fae-7dec-11d0-a765-00a0c91e6bf6",
-		Name: "example",
-		URI:  "https://example.com",
-		Tags: []string{"1", "2", "3"},
+func TestNewBookmark(t *testing.T) {
+	t.Parallel()
+	cases := map[string]struct {
+		entity           entity.Bookmark
+		expectedBookmark Bookmark
+	}{
+		"valid entity (empty tags)": {
+			*helper.ToBookmark(t, "1", "Example", "https://example.com"),
+			Bookmark{"1", "Example", "https://example.com", []string{}},
+		},
+		"valid entity (3 tags)": {
+			*helper.ToBookmark(t, "1", "Example", "https://example.com", "foo", "bar", "baz"),
+			Bookmark{"1", "Example", "https://example.com", []string{"foo", "bar", "baz"}},
+		},
 	}
-	assert.Exactly(t, expected, actual)
+	for name, tc := range cases {
+		tc := tc
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			// when
+			actualBookmark := NewBookmark(tc.entity)
+			// then
+			assert.Exactly(t, tc.expectedBookmark, actualBookmark)
+		})
+	}
 }

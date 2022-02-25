@@ -1,218 +1,319 @@
 package entity
 
 import (
+	"errors"
 	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
-// 関数 NewBookmark() のサンプル引数。
-func args() (*ID, *Name, *URI, []Tag) {
-	id, _ := NewID("f81d4fae-7dec-11d0-a765-00a0c91e6bf6")
-	name, _ := NewName("example")
-	uri, _ := NewURI("https://example.com")
-	tag1, _ := NewTag("1")
-	tag2, _ := NewTag("2")
-	tag3, _ := NewTag("3")
-	tags := []Tag{*tag1, *tag2, *tag3}
-	return id, name, uri, tags
+func toId(t *testing.T, v string) *ID {
+	t.Helper()
+	id, err := NewID(v)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return id
 }
 
-func TestNewBookmark_正当な値を受け取るとBookmark型のインスタンスを返却する(t *testing.T) {
-	tag1, _ := NewTag("1")
-	tag2, _ := NewTag("2")
-	tag3, _ := NewTag("3")
-	params := []struct {
-		tags []Tag
+func toName(t *testing.T, v string) *Name {
+	t.Helper()
+	name, err := NewName(v)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return name
+}
+
+func toUri(t *testing.T, v string) *URI {
+	t.Helper()
+	uri, err := NewURI(v)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return uri
+}
+
+func toTags(t *testing.T, vs ...string) []Tag {
+	t.Helper()
+	tags := make([]Tag, len(vs))
+	for i, v := range vs {
+		tag, err := NewTag(v)
+		if err != nil {
+			t.Fatal(err)
+		}
+		tags[i] = *tag
+	}
+	return tags
+}
+
+func TestNewBookmark(t *testing.T) {
+	t.Parallel()
+	id := toId(t, "1")
+	name := toName(t, "Example")
+	uri := toUri(t, "https://example.com")
+	emptyTags := toTags(t)
+	oneTag := toTags(t, "foo")
+	twoTags := toTags(t, "foo", "bar")
+	threeTags := toTags(t, "foo", "bar", "baz")
+	cases := map[string]struct {
+		id               *ID
+		name             *Name
+		uri              *URI
+		tags             []Tag
+		expectedBookmark *Bookmark
+		expectedErr      error
 	}{
-		{tags: []Tag{}},
-		{tags: []Tag{*tag1}},
-		{tags: []Tag{*tag1, *tag2}},
-		{tags: []Tag{*tag1, *tag2, *tag3}},
+		"non-nil arguments (empty tags)": {
+			id, name, uri, emptyTags,
+			&Bookmark{*id, *name, *uri, emptyTags},
+			nil,
+		},
+		"non-nil arguments (1 tag)": {
+			id, name, uri, oneTag,
+			&Bookmark{*id, *name, *uri, oneTag},
+			nil,
+		},
+		"non-nil arguments (2 tags)": {
+			id, name, uri, twoTags,
+			&Bookmark{*id, *name, *uri, twoTags},
+			nil,
+		},
+		"non-nil arguments (3 tags)": {
+			id, name, uri, threeTags,
+			&Bookmark{*id, *name, *uri, threeTags},
+			nil,
+		},
+		"nil id": {
+			nil, name, uri, threeTags,
+			nil,
+			errors.New("argument \"id\" is nil"),
+		},
+		"nil name": {
+			id, nil, uri, threeTags,
+			nil,
+			errors.New("argument \"name\" is nil"),
+		},
+		"nil uri": {
+			id, name, nil, threeTags,
+			nil,
+			errors.New("argument \"uri\" is nil"),
+		},
+		"nil tags": {
+			id, name, uri, nil,
+			nil,
+			errors.New("argument \"tags\" is nil"),
+		},
 	}
-	for _, p := range params {
+	for name, tc := range cases {
+		tc := tc
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			// when
+			actualBookmark, actualErr := NewBookmark(tc.id, tc.name, tc.uri, tc.tags)
+			// then
+			assert.Exactly(t, tc.expectedBookmark, actualBookmark)
+			assert.Exactly(t, tc.expectedErr, actualErr)
+		})
+	}
+	t.Run("tags pointer", func(t *testing.T) {
+		t.Parallel()
 		// given
-		id, _ := NewID("f81d4fae-7dec-11d0-a765-00a0c91e6bf6")
-		name, _ := NewName("example")
-		uri, _ := NewURI("https://example.com")
-		tags := p.tags
+		bookmark, _ := NewBookmark(id, name, uri, threeTags)
+		x := bookmark.tags
+		y := threeTags
 		// when
-		actual, err := NewBookmark(id, name, uri, tags)
+		same := reflect.ValueOf(x).Pointer() == reflect.ValueOf(y).Pointer()
+		equiv := reflect.DeepEqual(x, y)
 		// then
-		expected := &Bookmark{*id, *name, *uri, tags}
-		assert.Exactly(t, expected, actual)
-		assert.NoError(t, err)
-	}
+		assert.False(t, same)
+		assert.True(t, equiv)
+	})
 }
 
-func TestNewBookmark_不正な値を受け取るとエラーを返却する(t *testing.T) {
-	id, _ := NewID("f81d4fae-7dec-11d0-a765-00a0c91e6bf6")
-	name, _ := NewName("example")
-	uri, _ := NewURI("https://example.com")
-	tags := []Tag{}
-	params := []struct {
-		id        *ID
-		name      *Name
-		uri       *URI
-		tags      []Tag
-		errString string
-	}{
-		{id: nil, name: name, uri: uri, tags: tags, errString: "argument \"id\" is nil"},
-		{id: id, name: nil, uri: uri, tags: tags, errString: "argument \"name\" is nil"},
-		{id: id, name: name, uri: nil, tags: tags, errString: "argument \"uri\" is nil"},
-		{id: id, name: name, uri: uri, tags: nil, errString: "argument \"tags\" is nil"},
-	}
-	for _, p := range params {
-		// given
-		id := p.id
-		name := p.name
-		uri := p.uri
-		tags := p.tags
-		// when
-		object, err := NewBookmark(id, name, uri, tags)
-		// then
-		assert.Nil(t, object)
-		assert.EqualError(t, err, p.errString)
-	}
-}
-
-func TestNewBookmark_引数tagsとフィールドtagsは同一でないが同値となる(t *testing.T) {
+func TestBookmark_ID(t *testing.T) {
+	t.Parallel()
+	id := toId(t, "1")
+	name := toName(t, "Example")
+	uri := toUri(t, "https://example.com")
+	tags := toTags(t, "foo", "bar", "baz")
 	// given
-	id, name, uri, tags := args()
 	bookmark, _ := NewBookmark(id, name, uri, tags)
 	// when
-	same := reflect.ValueOf(tags).Pointer() == reflect.ValueOf(bookmark.tags).Pointer()
-	equiv := reflect.DeepEqual(tags, bookmark.tags)
+	actualId := bookmark.ID()
 	// then
-	assert.False(t, same)
-	assert.True(t, equiv)
+	expectedId := *id
+	assert.Exactly(t, expectedId, actualId)
 }
 
-func TestID_フィールドidを返却する(t *testing.T) {
+func TestBookmark_Name(t *testing.T) {
+	t.Parallel()
+	id := toId(t, "1")
+	name := toName(t, "Example")
+	uri := toUri(t, "https://example.com")
+	tags := toTags(t, "foo", "bar", "baz")
 	// given
-	bookmark, _ := NewBookmark(args())
+	bookmark, _ := NewBookmark(id, name, uri, tags)
 	// when
-	actual := bookmark.ID()
+	actualName := bookmark.Name()
 	// then
-	id, _ := NewID("f81d4fae-7dec-11d0-a765-00a0c91e6bf6")
-	expected := *id
-	assert.Exactly(t, expected, actual)
+	expectedName := *name
+	assert.Exactly(t, expectedName, actualName)
 }
 
-func TestName_フィールドnameを返却する(t *testing.T) {
+func TestBookmark_URI(t *testing.T) {
+	t.Parallel()
+	id := toId(t, "1")
+	name := toName(t, "Example")
+	uri := toUri(t, "https://example.com")
+	tags := toTags(t, "foo", "bar", "baz")
 	// given
-	bookmark, _ := NewBookmark(args())
+	bookmark, _ := NewBookmark(id, name, uri, tags)
 	// when
-	actual := bookmark.Name()
+	actualUri := bookmark.URI()
 	// then
-	name, _ := NewName("example")
-	expected := *name
-	assert.Exactly(t, expected, actual)
+	expectedUri := *uri
+	assert.Exactly(t, expectedUri, actualUri)
 }
 
-func TestURI_フィールドuriを返却する(t *testing.T) {
-	// given
-	bookmark, _ := NewBookmark(args())
-	// when
-	actual := bookmark.URI()
-	// then
-	uri, _ := NewURI("https://example.com")
-	expected := *uri
-	assert.Exactly(t, expected, actual)
+func TestBookmark_Tags(t *testing.T) {
+	t.Parallel()
+	id := toId(t, "1")
+	name := toName(t, "Example")
+	uri := toUri(t, "https://example.com")
+	tags := toTags(t, "foo", "bar", "baz")
+	t.Run("value", func(t *testing.T) {
+		t.Parallel()
+		// given
+		bookmark, _ := NewBookmark(id, name, uri, tags)
+		// when
+		actualTags := bookmark.Tags()
+		// then
+		expectedTags := tags
+		assert.ElementsMatch(t, expectedTags, actualTags)
+	})
+	t.Run("pointer", func(t *testing.T) {
+		t.Parallel()
+		// given
+		bookmark, _ := NewBookmark(id, name, uri, tags)
+		x := bookmark.Tags()
+		y := bookmark.tags
+		// when
+		same := reflect.ValueOf(x).Pointer() == reflect.ValueOf(y).Pointer()
+		equiv := reflect.DeepEqual(x, y)
+		// then
+		assert.False(t, same)
+		assert.True(t, equiv)
+	})
 }
 
-func TestTags_フィールドtagsを返却する(t *testing.T) {
-	// given
-	bookmark, _ := NewBookmark(args())
-	// when
-	actual := bookmark.Tags()
-	// then
-	tag1, _ := NewTag("1")
-	tag2, _ := NewTag("2")
-	tag3, _ := NewTag("3")
-	expected := []Tag{*tag1, *tag2, *tag3}
-	assert.Exactly(t, expected, actual)
+func TestBookmark_Rename(t *testing.T) {
+	t.Parallel()
+	id := toId(t, "1")
+	oldName := toName(t, "Example")
+	newName := toName(t, "EXAMPLE")
+	uri := toUri(t, "https://example.com")
+	tags := toTags(t, "foo", "bar", "baz")
+	cases := map[string]struct {
+		name         *Name
+		expectedName Name
+		expectedErr  error
+	}{
+		"non-nil name": {
+			newName,
+			*newName,
+			nil,
+		},
+		"nil name": {
+			nil,
+			*oldName,
+			errors.New("argument \"name\" is nil"),
+		},
+	}
+	for name, tc := range cases {
+		tc := tc
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			// given
+			bookmark, _ := NewBookmark(id, oldName, uri, tags)
+			// when
+			actualErr := bookmark.Rename(tc.name)
+			actualName := bookmark.name
+			// then
+			assert.Exactly(t, tc.expectedName, actualName)
+			assert.Exactly(t, tc.expectedErr, actualErr)
+		})
+	}
 }
 
-func TestTags_戻り値とフィールドtagsは同一でないが同値となる(t *testing.T) {
-	// given
-	bookmark, _ := NewBookmark(args())
-	tags := bookmark.Tags()
-	// when
-	same := reflect.ValueOf(tags).Pointer() == reflect.ValueOf(bookmark.tags).Pointer()
-	equiv := reflect.DeepEqual(tags, bookmark.tags)
-	// then
-	assert.False(t, same)
-	assert.True(t, equiv)
+func TestBookmark_RewriteURI(t *testing.T) {
+	t.Parallel()
+	id := toId(t, "1")
+	name := toName(t, "Example")
+	oldUri := toUri(t, "http://example.com")
+	newUri := toUri(t, "https://example.com")
+	tags := toTags(t, "foo", "bar", "baz")
+	cases := map[string]struct {
+		uri         *URI
+		expectedUri URI
+		expectedErr error
+	}{
+		"non-nil uri": {
+			newUri,
+			*newUri,
+			nil,
+		},
+		"nil uri": {
+			nil,
+			*oldUri,
+			errors.New("argument \"uri\" is nil"),
+		},
+	}
+	for casename, tc := range cases {
+		tc := tc
+		t.Run(casename, func(t *testing.T) {
+			t.Parallel()
+			// given
+			bookmark, _ := NewBookmark(id, name, oldUri, tags)
+			// when
+			actualErr := bookmark.RewriteURI(tc.uri)
+			actualUri := bookmark.uri
+			// then
+			assert.Exactly(t, tc.expectedUri, actualUri)
+			assert.Exactly(t, tc.expectedErr, actualErr)
+		})
+	}
 }
 
-func TestRename_正当な値を受け取るとフィールドnameを変更してnilを返却する(t *testing.T) {
-	// given
-	bookmark, _ := NewBookmark(args())
-	name, _ := NewName("EXAMPLE")
-	// when
-	err := bookmark.Rename(name)
-	// then
-	expected := *name
-	actual := bookmark.Name()
-	assert.Exactly(t, expected, actual)
-	assert.NoError(t, err)
-}
-
-func TestRename_不正な値を受け取るとフィールドnameを変更せずエラーを返却する(t *testing.T) {
-	// given
-	bookmark, _ := NewBookmark(args())
-	name := (*Name)(nil)
-	// when
-	err := bookmark.Rename(name)
-	// then
-	errString := "argument \"name\" is nil"
-	assert.EqualError(t, err, errString)
-}
-
-func TestRewriteURI_正当な値を受け取るとフィールドuriを変更してnilを返却する(t *testing.T) {
-	// given
-	bookmark, _ := NewBookmark(args())
-	uri, _ := NewURI("http://example.com")
-	// when
-	err := bookmark.RewriteURI(uri)
-	// then
-	expected := *uri
-	actual := bookmark.URI()
-	assert.Exactly(t, expected, actual)
-	assert.NoError(t, err)
-}
-
-func TestRename_不正な値を受け取るとフィールドuriを変更せずエラーを返却する(t *testing.T) {
-	// given
-	bookmark, _ := NewBookmark(args())
-	uri := (*URI)(nil)
-	// when
-	err := bookmark.RewriteURI(uri)
-	// then
-	errString := "argument \"uri\" is nil"
-	assert.EqualError(t, err, errString)
-}
-
-func TestDeepCopy_同じ値で異なるポインタを持つBookmark型のインスタンスを返却する(t *testing.T) {
-	// given
-	bookmark, _ := NewBookmark(args())
-	// when
-	copy := bookmark.DeepCopy()
-	// then
-	assert.Exactly(t, bookmark, copy)
-	assert.NotSame(t, bookmark, copy)
-}
-
-func TestDeepCopy_オリジナルとコピーのフィールドtagsは同一でないが同値となる(t *testing.T) {
-	// given
-	original, _ := NewBookmark(args())
-	copy := original.DeepCopy()
-	// when
-	same := reflect.ValueOf(original.tags).Pointer() == reflect.ValueOf(copy.tags).Pointer()
-	equiv := reflect.DeepEqual(original.tags, copy.tags)
-	// then
-	assert.False(t, same)
-	assert.True(t, equiv)
+func TestBookmark_DeepCopy(t *testing.T) {
+	t.Parallel()
+	id := toId(t, "1")
+	name := toName(t, "Example")
+	uri := toUri(t, "https://example.com")
+	tags := toTags(t, "foo", "bar", "baz")
+	t.Run("bookmark", func(t *testing.T) {
+		t.Parallel()
+		// given
+		original, _ := NewBookmark(id, name, uri, tags)
+		// when
+		copy := original.DeepCopy()
+		// then
+		assert.Exactly(t, original, copy)
+		assert.NotSame(t, original, copy)
+	})
+	t.Run("tags pointer", func(t *testing.T) {
+		t.Parallel()
+		// given
+		original, _ := NewBookmark(id, name, uri, tags)
+		copy := original.DeepCopy()
+		x := copy.tags
+		y := original.tags
+		// when
+		same := reflect.ValueOf(x).Pointer() == reflect.ValueOf(y).Pointer()
+		equiv := reflect.DeepEqual(x, y)
+		// then
+		assert.False(t, same)
+		assert.True(t, equiv)
+	})
 }

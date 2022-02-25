@@ -31,22 +31,22 @@ func NewBookmark(id *ID, name *Name, uri *URI, tags []Tag) (*Bookmark, error) {
 	return &Bookmark{*id, *name, *uri, append([]Tag{}, tags...)}, nil
 }
 
-// フィールド id を返却する。
+// フィールド id を取得する。
 func (b *Bookmark) ID() ID {
 	return b.id
 }
 
-// フィールド name を返却する。
+// フィールド name を取得する。
 func (b *Bookmark) Name() Name {
 	return b.name
 }
 
-// フィールド uri を返却する。
+// フィールド uri を取得する。
 func (b *Bookmark) URI() URI {
 	return b.uri
 }
 
-// フィールド tags を返却する。
+// フィールド tags を取得する。
 //
 // 複製したスライスを返却する。
 func (b *Bookmark) Tags() []Tag {

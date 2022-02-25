@@ -13,8 +13,8 @@ type InvalidCommandError struct {
 
 // エラー状態を表す。
 //
-// Args が空の場合は "command is invalid" を出力する。
-// Args に値が存在する場合は値を辞書順に連結して "command is invalid: [A: some error, B: some error]" を出力する。
+// Args に要素が存在しない場合は "command is invalid" を出力する。
+// Args に要素が存在する場合はキーを辞書順に連結して "command is invalid: [KeyA: ValueA, KeyB: ValueB]" を出力する。
 func (e *InvalidCommandError) Error() string {
 	text := "command is invalid"
 	if len(e.Args) > 0 {

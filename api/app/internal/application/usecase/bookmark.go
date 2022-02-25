@@ -38,9 +38,11 @@ func NewBookmarkUsecase(repository repository.Bookmark, service service.Bookmark
 
 // ブックマークを登録する。
 //
-// 不正なコマンドを受け取るとエラーを返却する。
-// ブックマークが重複して存在する場合はエラーを返却する。
-// リポジトリの操作に失敗した場合はエラーを返却する。
+// nilを指定した場合はエラーを返却する。
+// 不正なコマンドを指定した場合はエラーを返却する。
+// ブックマークの存在確認に失敗した場合はエラーを返却する。
+// ブックマークが存在する場合はエラーを返却する。
+// ブックマークの保存に失敗した場合はエラーを返却する。
 func (u *bookmarkUsecase) Register(cmd *command.RegisterBookmark) error {
 	if cmd == nil {
 		return fmt.Errorf("argument \"cmd\" is nil")
@@ -72,7 +74,7 @@ func (u *bookmarkUsecase) Register(cmd *command.RegisterBookmark) error {
 
 // ブックマークを一覧取得する。
 //
-// リポジトリの操作に失敗した場合はエラーを返却する。
+// ブックマークの検索に失敗した場合はエラーを返却する。
 func (u *bookmarkUsecase) List() ([]dto.Bookmark, error) {
 	entities, err := u.repository.FindAll()
 	if err != nil {
@@ -87,7 +89,8 @@ func (u *bookmarkUsecase) List() ([]dto.Bookmark, error) {
 
 // ブックマークを更新する。
 //
-// 不正なコマンドを受け取るとエラーを返却する。
+// nilを指定した場合はエラーを返却する。
+// 不正なコマンドを指定した場合はエラーを返却する。
 // ブックマークの検索に失敗した場合はエラーを返却する。
 // ブックマークが存在しない場合はエラーを返却する。
 // ブックマークの保存に失敗した場合はエラーを返却する。
@@ -111,7 +114,7 @@ func (u *bookmarkUsecase) Update(cmd *command.UpdateBookmark) error {
 	uri, _ := entity.NewURI(cmd.URI)
 	bookmark.RewriteURI(uri)
 	if err := u.repository.Save(bookmark); err != nil {
-		return fmt.Errorf("failed at repository.Save: some error")
+		return fmt.Errorf("failed at repository.Save: %w", err)
 	}
 	return nil
 }

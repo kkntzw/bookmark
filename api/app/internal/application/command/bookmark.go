@@ -60,3 +60,18 @@ func (cmd *UpdateBookmark) Validate() error {
 	}
 	return nil
 }
+
+// ブックマーク削除用のコマンド。
+type DeleteBookmark struct {
+	ID string // ID
+}
+
+// コマンドの妥当性を検証する。
+//
+// コマンドが不正な場合は InvalidCommandError を返却する。
+func (cmd *DeleteBookmark) Validate() error {
+	if _, err := entity.NewID(cmd.ID); err != nil {
+		return &InvalidCommandError{map[string]error{"ID": err}}
+	}
+	return nil
+}

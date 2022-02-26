@@ -72,3 +72,14 @@ func (r *bookmarkRepository) FindByID(id *entity.ID) (*entity.Bookmark, error) {
 	}
 	return bookmark.DeepCopy(), nil
 }
+
+// ブックマークを削除する。
+//
+// nilを指定した場合はエラーを返却する。
+func (r *bookmarkRepository) Delete(bookmark *entity.Bookmark) error {
+	if bookmark == nil {
+		return fmt.Errorf("argument \"bookmark\" is nil")
+	}
+	delete(r.store, bookmark.ID())
+	return nil
+}

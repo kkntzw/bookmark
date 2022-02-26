@@ -148,3 +148,22 @@ func (r *bookmarkRepository) FindByID(id *entity.ID) (*entity.Bookmark, error) {
 	bookmark, _ := entity.NewBookmark(id, name, uri, tags)
 	return bookmark, nil
 }
+
+// ブックマークを削除する。
+//
+// nilを指定した場合はエラーを返却する。
+// ドキュメントの削除に失敗した場合はエラーを返却する。
+//
+//	db.bookmarks.deleteOne({_id: "ID"})
+func (r *bookmarkRepository) Delete(bookmark *entity.Bookmark) error {
+	if bookmark == nil {
+		return fmt.Errorf("argument \"bookmark\" is nil")
+	}
+	ctx := context.Background()
+	id := bookmark.ID()
+	filter := bson.D{{Key: "_id", Value: id.Value()}}
+	if _, err := r.collection.DeleteOne(ctx, filter); err != nil {
+		return fmt.Errorf("failed at collection.DeleteOne: %w", err)
+	}
+	return nil
+}

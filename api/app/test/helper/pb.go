@@ -44,3 +44,11 @@ func ToUpdateBookmarkRequest(t *testing.T, id, name, uri string) *pb.UpdateBookm
 	}
 	return req
 }
+
+func ToDeleteBookmarkRequest(t *testing.T, id string) *pb.DeleteBookmarkRequest {
+	t.Helper()
+	req := &pb.DeleteBookmarkRequest{
+		BookmarkId: id,
+	}
+	return req
+}

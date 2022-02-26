@@ -249,3 +249,65 @@ func TestBookmark_UpdateBookmark(t *testing.T) {
 		})
 	}
 }
+
+func TestBookmark_DeleteBookmark(t *testing.T) {
+	t.Parallel()
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	cases := map[string]struct {
+		prepare          func(*mock_usecase.MockBookmark)
+		req              *pb.DeleteBookmarkRequest
+		expectedResponse *emptypb.Empty
+		expectedErr      error
+	}{
+		"non-nil request": {
+			func(usecase *mock_usecase.MockBookmark) {
+				usecase.EXPECT().Delete(&command.DeleteBookmark{ID: "1"}).Return(nil)
+			},
+			helper.ToDeleteBookmarkRequest(t, "1"),
+			&emptypb.Empty{},
+			nil,
+		},
+		"nil request": {
+			func(usecase *mock_usecase.MockBookmark) {},
+			nil,
+			nil,
+			status.Error(codes.InvalidArgument, "argument \"req\" is nil"),
+		},
+		"invalid request": {
+			func(usecase *mock_usecase.MockBookmark) {
+				usecase.
+					EXPECT().
+					Delete(&command.DeleteBookmark{ID: ""}).
+					Return(&command.InvalidCommandError{Args: map[string]error{"ID": helper.ToErrID(t, "")}})
+			},
+			helper.ToDeleteBookmarkRequest(t, ""),
+			nil,
+			status.Error(codes.InvalidArgument, "request is invalid"),
+		},
+		"failed at usecase.Delete": {
+			func(usecase *mock_usecase.MockBookmark) {
+				usecase.EXPECT().Delete(&command.DeleteBookmark{ID: "1"}).Return(errors.New("some error"))
+			},
+			helper.ToDeleteBookmarkRequest(t, "1"),
+			nil,
+			status.Error(codes.Internal, "server error"),
+		},
+	}
+	for name, tc := range cases {
+		tc := tc
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			usecase := mock_usecase.NewMockBookmark(ctrl)
+			tc.prepare(usecase)
+			// given
+			server := NewBookmarkServer(usecase)
+			ctx := context.TODO()
+			// when
+			actualResponse, actualErr := server.DeleteBookmark(ctx, tc.req)
+			// then
+			assert.Exactly(t, tc.expectedResponse, actualResponse)
+			assert.Exactly(t, tc.expectedErr, actualErr)
+		})
+	}
+}

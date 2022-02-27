@@ -28,7 +28,7 @@ func NewBookmarkService(repository repository.Bookmark) Bookmark {
 // ブックマークが存在するか確認する。
 //
 // nilを指定した場合はエラーを返却する。
-// リポジトリの操作中にエラーが発生した場合はエラーを返却する。
+// ブックマークの検索に失敗した場合はエラーを返却する。
 func (s *bookmarkService) Exists(bookmark *entity.Bookmark) (bool, error) {
 	if bookmark == nil {
 		return false, fmt.Errorf("argument \"bookmark\" is nil")

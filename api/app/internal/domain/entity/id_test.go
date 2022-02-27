@@ -1,96 +1,163 @@
 package entity
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewID_正当な値を受け取るとID型のインスタンスを返却する(t *testing.T) {
-	params := []struct {
-		v        string
-		expected *ID
+func TestNewID(t *testing.T) {
+	t.Parallel()
+	cases := map[string]struct {
+		v           string
+		expectedId  *ID
+		expectedErr error
 	}{
-		{v: "-", expected: &ID{"-"}},
-		{v: "0", expected: &ID{"0"}},
-		{v: "9", expected: &ID{"9"}},
-		{v: "a", expected: &ID{"a"}},
-		{v: "z", expected: &ID{"z"}},
+		"empty string": {
+			"",
+			nil,
+			errors.New("string length is 0"),
+		},
+		"\" \" U+0020 SPACE": {
+			"\u0020",
+			nil,
+			errors.New("contains invalid rune: '\u0020' (index: 0)"),
+		},
+		"\",\" U+002C COMMA": {
+			"\u002C",
+			nil,
+			errors.New("contains invalid rune: '\u002C' (index: 0)"),
+		},
+		"\"-\" U+002D HYPHEN-MINUS": {
+			"\u002D",
+			&ID{"\u002D"},
+			nil,
+		},
+		"\".\" U+002E FULL STOP": {
+			"\u002E",
+			nil,
+			errors.New("contains invalid rune: '\u002E' (index: 0)"),
+		},
+		"\"/\" U+002F SOLIDUS": {
+			"\u002F",
+			nil,
+			errors.New("contains invalid rune: '\u002F' (index: 0)"),
+		},
+		"\"0\" U+0030 DIGIT ZERO": {
+			"\u0030",
+			&ID{"\u0030"},
+			nil,
+		},
+		"\"9\" U+0039 DIGIT NINE": {
+			"\u0039",
+			&ID{"\u0039"},
+			nil,
+		},
+		"\":\" U+003A COLON": {
+			"\u003A",
+			nil,
+			errors.New("contains invalid rune: '\u003A' (index: 0)"),
+		},
+		"\"@\" U+0040 COMMERCIAL AT": {
+			"\u0040",
+			nil,
+			errors.New("contains invalid rune: '\u0040' (index: 0)"),
+		},
+		"\"A\" U+0041 LATIN CAPITAL LETTER A": {
+			"\u0041",
+			&ID{"\u0041"},
+			nil,
+		},
+		"\"Z\" U+005A LATIN CAPITAL LETTER Z": {
+			"\u005A",
+			&ID{"\u005A"},
+			nil,
+		},
+		"\"[\" U+005B LEFT SQUARE BRACKET": {
+			"\u005B",
+			nil,
+			errors.New("contains invalid rune: '\u005B' (index: 0)"),
+		},
+		"\"`\" U+0060 GRAVE ACCENT": {
+			"\u0060",
+			nil,
+			errors.New("contains invalid rune: '\u0060' (index: 0)"),
+		},
+		"\"a\" U+0061 LATIN SMALL LETTER A": {
+			"\u0061",
+			&ID{"\u0061"},
+			nil,
+		},
+		"\"z\" U+007A LATIN SMALL LETTER Z": {
+			"\u007A",
+			&ID{"\u007A"},
+			nil,
+		},
+		"\"{\" U+007B LEFT CURLY BRACKET": {
+			"\u007B",
+			nil,
+			errors.New("contains invalid rune: '\u007B' (index: 0)"),
+		},
 	}
-	for _, p := range params {
-		// given
-		v := p.v
-		// when
-		actual, err := NewID(v)
-		// then
-		assert.Exactly(t, p.expected, actual)
-		assert.NoError(t, err)
+	for name, tc := range cases {
+		tc := tc
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			// when
+			actualId, actualErr := NewID(tc.v)
+			// then
+			assert.Exactly(t, tc.expectedId, actualId)
+			assert.Exactly(t, tc.expectedErr, actualErr)
+		})
 	}
 }
 
-func TestNewID_不正な値を受け取るとエラーを返却する(t *testing.T) {
-	params := []struct {
-		v         string
-		errString string
+func TestID_Equals(t *testing.T) {
+	t.Parallel()
+	cases := map[string]struct {
+		xv            string
+		yv            string
+		expectedSame  bool
+		expectedEquiv bool
 	}{
-		{v: "", errString: "string length is 0"},
-		{v: "\u0020", errString: "contains invalid rune: '\u0020' (index: 0)"},
-		{v: "\u0029", errString: "contains invalid rune: '\u0029' (index: 0)"},
-		{v: "\u0040", errString: "contains invalid rune: '\u0040' (index: 0)"},
-		{v: "\u0060", errString: "contains invalid rune: '\u0060' (index: 0)"},
-		{v: "\u007B", errString: "contains invalid rune: '\u007B' (index: 0)"},
+		"equivalent value": {
+			"00a0c91e6bf6",
+			"00a0c91e6bf6",
+			false,
+			true,
+		},
+		"non-equivalent value": {
+			"00a0c91e6bf6",
+			"00A0C91E6bF6",
+			false,
+			false,
+		},
 	}
-	for _, p := range params {
-		// given
-		v := p.v
-		// when
-		object, err := NewID(v)
-		// then
-		assert.Nil(t, object)
-		assert.EqualError(t, err, p.errString)
+	for name, tc := range cases {
+		tc := tc
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			// given
+			x, _ := NewID(tc.xv)
+			y, _ := NewID(tc.yv)
+			// when
+			actualSame := x == y
+			actualEquiv := *x == *y
+			// then
+			assert.Exactly(t, tc.expectedSame, actualSame)
+			assert.Exactly(t, tc.expectedEquiv, actualEquiv)
+		})
 	}
 }
 
-func TestEquals_同じ値を持つID型のインスタンスは等しい(t *testing.T) {
+func TestID_Value(t *testing.T) {
+	t.Parallel()
 	// given
-	x, _ := NewID("f81d4fae-7dec-11d0-a765-00a0c91e6bf6")
-	y, _ := NewID("f81d4fae-7dec-11d0-a765-00a0c91e6bf6")
+	id, _ := NewID("00a0c91e6bf6")
 	// when
-	same := x == y
-	equiv := *x == *y
+	actualValue := id.Value()
 	// then
-	assert.False(t, same)
-	assert.True(t, equiv)
-}
-
-func TestEquals_異なる値を持つID型のインスタンスは等しくない(t *testing.T) {
-	// given
-	x, _ := NewID("f81d4fae-7dec-11d0-a765-00a0c91e6bf6")
-	y, _ := NewID("f81d4fae-7dec-11d0-a765-00a0c91e6bf9")
-	// when
-	same := x == y
-	equiv := *x == *y
-	// then
-	assert.False(t, same)
-	assert.False(t, equiv)
-}
-
-func TestValue_ID型から値を取得する(t *testing.T) {
-	// given
-	id, _ := NewID("f81d4fae-7dec-11d0-a765-00a0c91e6bf6")
-	// when
-	actual := id.Value()
-	// then
-	expected := "f81d4fae-7dec-11d0-a765-00a0c91e6bf6"
-	assert.Exactly(t, expected, actual)
-}
-
-func TestCopy_同じ値で異なるポインタを持つID型のインスタンスを返却する(t *testing.T) {
-	// given
-	id, _ := NewID("f81d4fae-7dec-11d0-a765-00a0c91e6bf6")
-	// when
-	copy := id.Copy()
-	// then
-	assert.Exactly(t, id, copy)
-	assert.NotSame(t, id, copy)
+	expectedValue := "00a0c91e6bf6"
+	assert.Exactly(t, expectedValue, actualValue)
 }

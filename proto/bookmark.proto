@@ -48,6 +48,34 @@ message CreateBookmarkRequest {
   repeated Tag tags = 4;
 }
 
+// UpdateBookmark 用のリクエストメッセージ。
+message UpdateBookmarkRequest {
+  // ブックマークIDを表すフィールド。
+  //
+  // 必須項目。
+  string bookmark_id = 1;
+
+  // ブックマーク名を表すフィールド。
+  //
+  // 必須項目。
+  // 空白は不正とする。
+  string bookmark_name = 2;
+
+  // URIを表すフィールド。
+  //
+  // 必須項目。
+  // 空白は不正とする。
+  string uri = 3;
+}
+
+// DeleteBookmark 用のリクエストメッセージ。
+message DeleteBookmarkRequest {
+  // ブックマークIDを表すフィールド。
+  //
+  // 必須項目。
+  string bookmark_id = 1;
+}
+
 // ブックマークを管理するサービス。
 service Bookmarker {
   // ブックマークを作成する。
@@ -56,4 +84,24 @@ service Bookmarker {
   // 無効な引数を指定した場合は INVALID_ARGUMENT を返却する。
   // サーバエラーが発生した場合は INTERNAL を返却する。
   rpc CreateBookmark(CreateBookmarkRequest) returns (google.protobuf.Empty);
+
+  // ブックマークを一覧取得する。
+  //
+  // 一覧取得に成功した場合は OK を返却する。
+  // サーバエラーが発生した場合は INTERNAL を返却する。
+  rpc ListBookmarks(google.protobuf.Empty) returns (stream Bookmark);
+
+  // ブックマークを更新する。
+  //
+  // 更新に成功した場合は OK を返却する。
+  // 無効な引数を指定した場合は INVALID_ARGUMENT を返却する。
+  // サーバエラーが発生した場合は INTERNAL を返却する。
+  rpc UpdateBookmark(UpdateBookmarkRequest) returns (google.protobuf.Empty);
+
+  // ブックマークを削除する。
+  //
+  // 削除に成功した場合は OK を返却する。
+  // 無効な引数を指定した場合は INVALID_ARGUMENT を返却する。
+  // サーバエラーが発生した場合は INTERNAL を返却する。
+  rpc DeleteBookmark(DeleteBookmarkRequest) returns (google.protobuf.Empty);
 }

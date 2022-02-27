@@ -3,6 +3,7 @@ package entity
 import (
 	"fmt"
 	"net/url"
+	"unicode"
 )
 
 // URIを表す値オブジェクト。
@@ -11,26 +12,30 @@ type URI struct {
 }
 
 // URIを検証する。
-//
-// RegExp: `^[\s\v\c85\cA0]*$`
-//
-// 文字列長が0の場合はエラーを返却する。
-// 空白(\u0009-\u000D\u0020\u0085\u00A0)以外の文字を含まない場合はエラーを返却する。
 func validateURI(s string) error {
 	if len(s) == 0 {
 		return fmt.Errorf("string length is 0")
 	}
-	for _, r := range s {
-		if (r < '\u0009' || '\u000D' < r) && (r != '\u0020') && (r != '\u0085') && (r != '\u00A0') {
-			return nil
+	blank := true
+	for i, r := range s {
+		if unicode.IsControl(r) {
+			return fmt.Errorf("contains control character: %U (index: %d)", r, i)
+		}
+		if !unicode.IsSpace(r) {
+			blank = false
 		}
 	}
-	return fmt.Errorf("blank string")
+	if blank {
+		return fmt.Errorf("blank string")
+	}
+	return nil
 }
 
 // URIを表す値オブジェクトを生成する。
 //
-// 不正な値を指定した場合はエラーを返却する。
+// 文字列長が0の場合はエラーを返却する。
+// 制御文字を含む場合はエラーを返却する。
+// 空白以外の文字を含まない場合はエラーを返却する。
 // URIの解析に失敗した場合はエラーを返却する。
 func NewURI(v string) (*URI, error) {
 	if err := validateURI(v); err != nil {
@@ -51,9 +56,4 @@ func (uri *URI) Value() url.URL {
 // string型の値を取得する。
 func (uri *URI) String() string {
 	return uri.value.String()
-}
-
-// インスタンスを複製する。
-func (uri URI) Copy() *URI {
-	return &uri
 }

@@ -42,11 +42,26 @@ func (r *bookmarkRepository) Save(bookmark *entity.Bookmark) error {
 	return nil
 }
 
+// ブックマーク一覧を検索する。
+//
+// ブックマークが存在しない場合は空のスライスを返却する。
+//
+// ブックマークが存在する場合は複製したインスタンスを返却する。
+func (r *bookmarkRepository) FindAll() ([]entity.Bookmark, error) {
+	bookmarks := []entity.Bookmark{}
+	for _, bookmark := range r.store {
+		bookmarks = append(bookmarks, *bookmark.DeepCopy())
+	}
+	return bookmarks, nil
+}
+
 // IDからブックマークを検索する。
 //
-// 該当するブックマークが存在する場合は複製したインスタンスを返却する。
-// nilを指定した場合はエラーを返却する。
 // 該当するブックマークが存在しない場合はnilを返却する。
+//
+// nilを指定した場合はエラーを返却する。
+//
+// 該当するブックマークが存在する場合は複製したインスタンスを返却する。
 func (r *bookmarkRepository) FindByID(id *entity.ID) (*entity.Bookmark, error) {
 	if id == nil {
 		return nil, fmt.Errorf("argument \"id\" is nil")
@@ -56,4 +71,15 @@ func (r *bookmarkRepository) FindByID(id *entity.ID) (*entity.Bookmark, error) {
 		return nil, nil
 	}
 	return bookmark.DeepCopy(), nil
+}
+
+// ブックマークを削除する。
+//
+// nilを指定した場合はエラーを返却する。
+func (r *bookmarkRepository) Delete(bookmark *entity.Bookmark) error {
+	if bookmark == nil {
+		return fmt.Errorf("argument \"bookmark\" is nil")
+	}
+	delete(r.store, bookmark.ID())
+	return nil
 }

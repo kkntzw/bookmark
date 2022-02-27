@@ -1,95 +1,98 @@
 package entity
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewTag_正当な値を受け取るとTag型のインスタンスを返却する(t *testing.T) {
-	params := []struct {
-		v        string
-		expected *Tag
+func TestNewTag(t *testing.T) {
+	t.Parallel()
+	cases := map[string]struct {
+		v           string
+		expectedTag *Tag
+		expectedErr error
 	}{
-		{v: "EXAMPLE 0", expected: &Tag{"EXAMPLE 0"}},
-		{v: "example 9", expected: &Tag{"example 9"}},
-		{v: "れい　０", expected: &Tag{"れい　０"}},
-		{v: "レイ　９", expected: &Tag{"レイ　９"}},
-		{v: "例", expected: &Tag{"例"}},
+		"non-empty string": {
+			"Hello, 世界",
+			&Tag{"Hello, 世界"},
+			nil,
+		},
+		"empty string": {
+			"",
+			nil,
+			errors.New("string length is 0"),
+		},
+		"contains control character": {
+			"Hello,\u0000世界",
+			nil,
+			errors.New("contains control character: U+0000 (index: 6)"),
+		},
+		"blank string": {
+			" ",
+			nil,
+			errors.New("blank string"),
+		},
 	}
-	for _, p := range params {
-		// given
-		v := p.v
-		// when
-		actual, err := NewTag(v)
-		// then
-		assert.Exactly(t, p.expected, actual)
-		assert.NoError(t, err)
+	for name, tc := range cases {
+		tc := tc
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			// when
+			actualTag, actualErr := NewTag(tc.v)
+			// then
+			assert.Exactly(t, tc.expectedTag, actualTag)
+			assert.Exactly(t, tc.expectedErr, actualErr)
+		})
 	}
 }
 
-func TestNewTag_不正な値を受け取るとエラーを返却する(t *testing.T) {
-	params := []struct {
-		v         string
-		errString string
+func TestTag_Equals(t *testing.T) {
+	t.Parallel()
+	cases := map[string]struct {
+		xv            string
+		yv            string
+		expectedSame  bool
+		expectedEquiv bool
 	}{
-		{v: "", errString: "string length is 0"},
-		{v: "\u0000", errString: "contains control character: U+0000 (index: 0)"},
-		{v: "\u001F", errString: "contains control character: U+001F (index: 0)"},
-		{v: "\u007F", errString: "contains control character: U+007F (index: 0)"},
-		{v: "\u0020\u0085\u00A0", errString: "blank string"},
+		"equivalent value": {
+			"Hello, 世界",
+			"Hello, 世界",
+			false,
+			true,
+		},
+		"non-equivalent value": {
+			"Hello, 世界",
+			"Hello, World",
+			false,
+			false,
+		},
 	}
-	for _, p := range params {
-		// given
-		v := p.v
-		// when
-		object, err := NewTag(v)
-		// then
-		assert.Nil(t, object)
-		assert.EqualError(t, err, p.errString)
+	for name, tc := range cases {
+		tc := tc
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			// given
+			x, _ := NewTag(tc.xv)
+			y, _ := NewTag(tc.yv)
+			// when
+			actualSame := x == y
+			actualEquiv := *x == *y
+			// then
+			assert.Exactly(t, tc.expectedSame, actualSame)
+			assert.Exactly(t, tc.expectedEquiv, actualEquiv)
+		})
 	}
 }
 
-func TestEquals_同じ値を持つTag型のインスタンスは等しい(t *testing.T) {
+func TestTag_Value(t *testing.T) {
+	t.Parallel()
 	// given
-	x, _ := NewTag("example")
-	y, _ := NewTag("example")
+	tag, _ := NewTag("Hello, 世界")
 	// when
-	same := x == y
-	equiv := *x == *y
+	actualValue := tag.Value()
 	// then
-	assert.False(t, same)
-	assert.True(t, equiv)
-}
-
-func TestEquals_異なる値を持つTag型のインスタンスは等しくない(t *testing.T) {
-	// given
-	x, _ := NewTag("example")
-	y, _ := NewTag("Example")
-	// when
-	same := x == y
-	equiv := *x == *y
-	// then
-	assert.False(t, same)
-	assert.False(t, equiv)
-}
-
-func TestValue_Tag型から値を取得する(t *testing.T) {
-	// given
-	tag, _ := NewTag("example")
-	// when
-	actual := tag.Value()
-	// then
-	expected := "example"
-	assert.Exactly(t, expected, actual)
-}
-
-func TestCopy_同じ値で異なるポインタを持つTag型のインスタンスを返却する(t *testing.T) {
-	// given
-	tag, _ := NewTag("example")
-	// when
-	copy := tag.Copy()
-	// then
-	assert.Exactly(t, tag, copy)
-	assert.NotSame(t, tag, copy)
+	expectedValue := "Hello, 世界"
+	assert.Exactly(t, expectedValue, actualValue)
 }

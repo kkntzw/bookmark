@@ -100,3 +100,30 @@ func TestUpdateBookmark_Validate(t *testing.T) {
 		})
 	}
 }
+
+func TestDeleteBookmark_Validate(t *testing.T) {
+	t.Parallel()
+	cases := map[string]struct {
+		cmd         *DeleteBookmark
+		expectedErr error
+	}{
+		"valid argument": {
+			&DeleteBookmark{"1"},
+			nil,
+		},
+		"invalid argument": {
+			&DeleteBookmark{""},
+			&InvalidCommandError{map[string]error{"ID": helper.ToErrID(t, "")}},
+		},
+	}
+	for name, tc := range cases {
+		tc := tc
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			// when
+			actualErr := tc.cmd.Validate()
+			// then
+			assert.Exactly(t, tc.expectedErr, actualErr)
+		})
+	}
+}

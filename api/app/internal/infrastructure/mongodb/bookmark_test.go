@@ -243,3 +243,59 @@ func TestBookmark_FindByID(t *testing.T) {
 		})
 	}
 }
+
+func TestBookmark_Delete(t *testing.T) {
+	t.Parallel()
+	mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock))
+	defer mt.Close()
+	cases := map[string]struct {
+		prepare     func(*mtest.T)
+		bookmark    *entity.Bookmark
+		expectedErr error
+	}{
+		"stored bookmark": {
+			func(mt *mtest.T) {
+				mt.AddMockResponses(mtest.CreateSuccessResponse(bson.E{Key: "acknowledged", Value: true}, bson.E{Key: "n", Value: 1}))
+			},
+			helper.ToBookmark(t, "1", "Example", "https://example.com", "foo", "bar", "baz"),
+			nil,
+		},
+		"unstored bookmark": {
+			func(mt *mtest.T) {
+				mt.AddMockResponses(mtest.CreateSuccessResponse(bson.E{Key: "acknowledged", Value: true}, bson.E{Key: "n", Value: 0}))
+			},
+			helper.ToBookmark(t, "1", "Example", "https://example.com", "foo", "bar", "baz"),
+			nil,
+		},
+		"nil bookmark": {
+			func(mt *mtest.T) {},
+			nil,
+			errors.New("argument \"bookmark\" is nil"),
+		},
+		"failed at collection.DeleteOne": {
+			func(mt *mtest.T) {
+				mt.AddMockResponses(bson.D{{Key: "ok", Value: 0}})
+			},
+			helper.ToBookmark(t, "1", "Example", "https://example.com", "foo", "bar", "baz"),
+			errors.New("failed at collection.DeleteOne: command failed"),
+		},
+	}
+	for name, tc := range cases {
+		tc := tc
+		mt.Run(name, func(mt *mtest.T) {
+			mt.Parallel()
+			tc.prepare(mt)
+			// given
+			collection := mt.Coll
+			repository := NewBookmarkRepository(collection)
+			// when
+			actualErr := repository.Delete(tc.bookmark)
+			// then
+			if tc.expectedErr == nil {
+				assert.NoError(mt, actualErr)
+			} else {
+				assert.Exactly(mt, tc.expectedErr.Error(), actualErr.Error())
+			}
+		})
+	}
+}

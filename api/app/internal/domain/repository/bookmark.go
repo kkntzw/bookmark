@@ -21,4 +21,7 @@ type Bookmark interface {
 	//
 	// 該当するブックマークが存在しない場合はnilを返却する。
 	FindByID(id *entity.ID) (*entity.Bookmark, error)
+
+	// ブックマークを削除する。
+	Delete(bookmark *entity.Bookmark) error
 }

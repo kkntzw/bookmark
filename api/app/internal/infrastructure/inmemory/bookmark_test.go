@@ -162,3 +162,43 @@ func TestBookmark_FindByID(t *testing.T) {
 		})
 	}
 }
+
+func TestBookmark_Delete(t *testing.T) {
+	t.Parallel()
+	cases := map[string]struct {
+		prepare     func(repository.Bookmark)
+		bookmark    *entity.Bookmark
+		expectedErr error
+	}{
+		"stored bookmark": {
+			func(r repository.Bookmark) {
+				r.Save(helper.ToBookmark(t, "1", "Example", "https://example.com", "foo", "bar", "baz"))
+			},
+			helper.ToBookmark(t, "1", "Example", "https://example.com", "foo", "bar", "baz"),
+			nil,
+		},
+		"unstored bookmark": {
+			func(r repository.Bookmark) {},
+			helper.ToBookmark(t, "1", "Example", "https://example.com", "foo", "bar", "baz"),
+			nil,
+		},
+		"nil bookmark": {
+			func(r repository.Bookmark) {},
+			nil,
+			errors.New("argument \"bookmark\" is nil"),
+		},
+	}
+	for name, tc := range cases {
+		tc := tc
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			// given
+			repository := NewBookmarkRepository()
+			tc.prepare(repository)
+			// when
+			actualErr := repository.Delete(tc.bookmark)
+			// then
+			assert.Exactly(t, tc.expectedErr, actualErr)
+		})
+	}
+}

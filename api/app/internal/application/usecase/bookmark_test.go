@@ -247,3 +247,70 @@ func TestBookmark_Update(t *testing.T) {
 		})
 	}
 }
+
+func TestBookmark_Delete(t *testing.T) {
+	t.Parallel()
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	cases := map[string]struct {
+		prepare     func(*mock_repository.MockBookmark)
+		cmd         *command.DeleteBookmark
+		expectedErr error
+	}{
+		"non-nil command": {
+			func(repository *mock_repository.MockBookmark) {
+				repository.EXPECT().FindByID(helper.ToID(t, "1")).Return(helper.ToBookmark(t, "1", "Example", "https://example.com", "foo", "bar", "baz"), nil)
+				repository.EXPECT().Delete(helper.ToBookmark(t, "1", "Example", "https://example.com", "foo", "bar", "baz")).Return(nil)
+			},
+			&command.DeleteBookmark{ID: "1"},
+			nil,
+		},
+		"nil command": {
+			func(repository *mock_repository.MockBookmark) {},
+			nil,
+			errors.New("argument \"cmd\" is nil"),
+		},
+		"invalid command": {
+			func(repository *mock_repository.MockBookmark) {},
+			&command.DeleteBookmark{ID: ""},
+			&command.InvalidCommandError{Args: map[string]error{"ID": helper.ToErrID(t, "")}},
+		},
+		"non-existent bookmark": {
+			func(repository *mock_repository.MockBookmark) {
+				repository.EXPECT().FindByID(helper.ToID(t, "1")).Return(nil, nil)
+			},
+			&command.DeleteBookmark{ID: "1"},
+			errors.New("bookmark does not exist"),
+		},
+		"failed at repository.FindByID": {
+			func(repository *mock_repository.MockBookmark) {
+				repository.EXPECT().FindByID(helper.ToID(t, "1")).Return(nil, errors.New("some error"))
+			},
+			&command.DeleteBookmark{ID: "1"},
+			fmt.Errorf("failed at repository.FindByID: %w", errors.New("some error")),
+		},
+		"failed at repository.Delete": {
+			func(repository *mock_repository.MockBookmark) {
+				repository.EXPECT().FindByID(helper.ToID(t, "1")).Return(helper.ToBookmark(t, "1", "Example", "https://example.com", "foo", "bar", "baz"), nil)
+				repository.EXPECT().Delete(helper.ToBookmark(t, "1", "Example", "https://example.com", "foo", "bar", "baz")).Return(errors.New("some error"))
+			},
+			&command.DeleteBookmark{ID: "1"},
+			fmt.Errorf("failed at repository.Delete: %w", errors.New("some error")),
+		},
+	}
+	for name, tc := range cases {
+		tc := tc
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			repository := mock_repository.NewMockBookmark(ctrl)
+			service := mock_service.NewMockBookmark(ctrl)
+			tc.prepare(repository)
+			// given
+			usecase := NewBookmarkUsecase(repository, service)
+			// when
+			actualErr := usecase.Delete(tc.cmd)
+			// then
+			assert.Exactly(t, tc.expectedErr, actualErr)
+		})
+	}
+}

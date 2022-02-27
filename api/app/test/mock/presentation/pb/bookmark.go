@@ -58,6 +58,26 @@ func (mr *MockBookmarkerClientMockRecorder) CreateBookmark(ctx, in interface{}, 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateBookmark", reflect.TypeOf((*MockBookmarkerClient)(nil).CreateBookmark), varargs...)
 }
 
+// DeleteBookmark mocks base method.
+func (m *MockBookmarkerClient) DeleteBookmark(ctx context.Context, in *pb.DeleteBookmarkRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "DeleteBookmark", varargs...)
+	ret0, _ := ret[0].(*emptypb.Empty)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DeleteBookmark indicates an expected call of DeleteBookmark.
+func (mr *MockBookmarkerClientMockRecorder) DeleteBookmark(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteBookmark", reflect.TypeOf((*MockBookmarkerClient)(nil).DeleteBookmark), varargs...)
+}
+
 // ListBookmarks mocks base method.
 func (m *MockBookmarkerClient) ListBookmarks(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (pb.Bookmarker_ListBookmarksClient, error) {
 	m.ctrl.T.Helper()
@@ -257,6 +277,21 @@ func (m *MockBookmarkerServer) CreateBookmark(arg0 context.Context, arg1 *pb.Cre
 func (mr *MockBookmarkerServerMockRecorder) CreateBookmark(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateBookmark", reflect.TypeOf((*MockBookmarkerServer)(nil).CreateBookmark), arg0, arg1)
+}
+
+// DeleteBookmark mocks base method.
+func (m *MockBookmarkerServer) DeleteBookmark(arg0 context.Context, arg1 *pb.DeleteBookmarkRequest) (*emptypb.Empty, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteBookmark", arg0, arg1)
+	ret0, _ := ret[0].(*emptypb.Empty)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DeleteBookmark indicates an expected call of DeleteBookmark.
+func (mr *MockBookmarkerServerMockRecorder) DeleteBookmark(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteBookmark", reflect.TypeOf((*MockBookmarkerServer)(nil).DeleteBookmark), arg0, arg1)
 }
 
 // ListBookmarks mocks base method.

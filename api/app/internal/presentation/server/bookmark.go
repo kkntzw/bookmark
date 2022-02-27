@@ -109,3 +109,20 @@ func (s *bookmarkServer) UpdateBookmark(ctx context.Context, req *pb.UpdateBookm
 	}
 	return &emptypb.Empty{}, nil
 }
+
+func (s *bookmarkServer) DeleteBookmark(ctx context.Context, req *pb.DeleteBookmarkRequest) (*emptypb.Empty, error) {
+	if req == nil {
+		return nil, status.Error(codes.InvalidArgument, "argument \"req\" is nil")
+	}
+	id := req.BookmarkId
+	cmd := &command.DeleteBookmark{ID: id}
+	err := s.usecase.Delete(cmd)
+	var icerr *command.InvalidCommandError
+	if errors.As(err, &icerr) {
+		return nil, status.Error(codes.InvalidArgument, "request is invalid")
+	}
+	if err != nil {
+		return nil, status.Error(codes.Internal, "server error")
+	}
+	return &emptypb.Empty{}, nil
+}

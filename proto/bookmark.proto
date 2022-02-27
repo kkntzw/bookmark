@@ -68,6 +68,14 @@ message UpdateBookmarkRequest {
   string uri = 3;
 }
 
+// DeleteBookmark 用のリクエストメッセージ。
+message DeleteBookmarkRequest {
+  // ブックマークIDを表すフィールド。
+  //
+  // 必須項目。
+  string bookmark_id = 1;
+}
+
 // ブックマークを管理するサービス。
 service Bookmarker {
   // ブックマークを作成する。
@@ -89,4 +97,11 @@ service Bookmarker {
   // 無効な引数を指定した場合は INVALID_ARGUMENT を返却する。
   // サーバエラーが発生した場合は INTERNAL を返却する。
   rpc UpdateBookmark(UpdateBookmarkRequest) returns (google.protobuf.Empty);
+
+  // ブックマークを削除する。
+  //
+  // 削除に成功した場合は OK を返却する。
+  // 無効な引数を指定した場合は INVALID_ARGUMENT を返却する。
+  // サーバエラーが発生した場合は INTERNAL を返却する。
+  rpc DeleteBookmark(DeleteBookmarkRequest) returns (google.protobuf.Empty);
 }

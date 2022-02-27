@@ -34,6 +34,20 @@ func (m *MockBookmark) EXPECT() *MockBookmarkMockRecorder {
 	return m.recorder
 }
 
+// Delete mocks base method.
+func (m *MockBookmark) Delete(bookmark *entity.Bookmark) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Delete", bookmark)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Delete indicates an expected call of Delete.
+func (mr *MockBookmarkMockRecorder) Delete(bookmark interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockBookmark)(nil).Delete), bookmark)
+}
+
 // FindAll mocks base method.
 func (m *MockBookmark) FindAll() ([]entity.Bookmark, error) {
 	m.ctrl.T.Helper()
